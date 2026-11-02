@@ -1,0 +1,3277 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>寶可夢招式超武與狀態異常測試沙盒 | Pokémon Moves & Status Sandbox V8 Ultimate</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --pixel-font: 'Press Start 2P', monospace;
+      --body-font: 'Noto Sans TC', sans-serif;
+    }
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #0b1117; font-family: var(--body-font); color: #f1f5f9; }
+    .font-pixel { font-family: var(--pixel-font); letter-spacing: 0.04em; }
+    canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+    .pixel-sprite { image-rendering: pixelated; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.45)); }
+    
+    .sandbox-panel {
+      background: rgba(15, 23, 42, 0.94);
+      backdrop-filter: blur(12px);
+      border: 2px solid #334155;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    .sandbox-card {
+      background: rgba(30, 41, 59, 0.75);
+      border: 1.5px solid #475569;
+      transition: all 0.15s ease;
+    }
+    .sandbox-card:hover {
+      border-color: #38bdf8;
+      background: rgba(30, 41, 59, 0.95);
+    }
+    .sandbox-card.active {
+      border-color: #facc15;
+      background: rgba(51, 65, 85, 0.95);
+      box-shadow: 0 0 14px rgba(250, 204, 21, 0.35);
+    }
+    
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+    input[type=range] { accent-color: #facc15; }
+
+    .action-btn { transition: transform 0.1s, box-shadow 0.1s; }
+    .action-btn:active { transform: scale(0.92); }
+  </style>
+</head>
+<body class="relative w-screen h-screen overflow-hidden">
+
+  <!-- 1. 60FPS RENDERING CANVAS -->
+  <canvas id="sandboxCanvas" class="absolute inset-0 z-0 cursor-crosshair"></canvas>
+
+  <!-- 2. TOP STATUS BAR (Stats, FPS, Controls) -->
+  <header class="absolute top-2 left-2 right-2 z-20 flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl sandbox-panel">
+    <div class="flex items-center gap-3">
+      <button id="btnToggleSidebar" onclick="SandboxApp.toggleSidebar()" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-sky-950/80 hover:bg-sky-900 border border-sky-500 text-sky-200 flex items-center gap-1.5 transition-all">
+        <i id="toggleSidebarIcon" class="fa-solid fa-chevron-left"></i>
+        <span id="toggleSidebarText">收合面板</span>
+      </button>
+
+      <div class="flex items-center gap-2 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-700">
+        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="w-5 h-5 pixel-sprite animate-pulse" alt="ball"/>
+        <span class="font-pixel text-[11px] text-amber-400">POKÉ-VFX TEST LAB V8</span>
+        <span class="text-[10px] bg-red-600/80 px-1.5 py-0.2 rounded font-black text-white">終極閃爍電網與性能旗艦版</span>
+      </div>
+      
+      <div class="hidden sm:flex items-center gap-2 text-xs font-mono">
+        <span class="text-slate-400">FPS: <strong id="statFps" class="text-emerald-400 font-bold">60</strong></span>
+        <span class="text-slate-500">|</span>
+        <span class="text-slate-400">粒子: <strong id="statParticles" class="text-cyan-400 font-bold">0</strong></span>
+        <span class="text-slate-500">|</span>
+        <span class="text-slate-400">總DPS: <strong id="statDps" class="text-amber-400 font-bold">0</strong></span>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-1.5">
+      <button id="btnPause" onclick="SandboxApp.togglePause()" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 flex items-center gap-1">
+        <i id="pauseIcon" class="fa-solid fa-pause text-amber-400"></i>
+        <span id="pauseText">暫停</span>
+      </button>
+      <button onclick="SandboxApp.stepFrame()" class="px-2 py-1 text-xs font-bold rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300" title="單格前進 1 Frame">
+        <i class="fa-solid fa-forward-step"></i> 單格
+      </button>
+      <button onclick="SandboxApp.resetCanvasCam()" class="px-2 py-1 text-xs font-bold rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300" title="鏡頭重設至中心">
+        <i class="fa-solid fa-crosshairs"></i> 居中
+      </button>
+      <button onclick="SandboxApp.clearAllDummies()" class="px-2 py-1 text-xs font-bold rounded-lg bg-red-950/70 hover:bg-red-900 border border-red-700 text-red-200" title="清除所有木樁與投射物">
+        <i class="fa-solid fa-trash-can"></i> 清除
+      </button>
+    </div>
+  </header>
+
+  <!-- 3. INDEPENDENT FLOATING MANUAL LAUNCHER -->
+  <div class="fixed right-3.5 bottom-4 z-30 pointer-events-auto flex flex-col items-end gap-2">
+    <div class="sandbox-panel px-3 py-1.5 rounded-2xl flex items-center gap-2 border border-slate-700">
+      <button onclick="SandboxApp.toggleSlowMo()" id="btnSlowMo" class="action-btn px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-[11px] font-bold text-slate-200 flex items-center gap-1">
+        <i class="fa-solid fa-gauge-simple-high text-amber-400"></i> <span id="slowMoText">慢動作 (0.3x)</span>
+      </button>
+      <button onclick="SandboxApp.toggleAutoFire()" id="btnAutoFireFloating" class="action-btn px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-[11px] font-bold text-slate-200 flex items-center gap-1">
+        <i class="fa-solid fa-arrows-rotate text-purple-400"></i> 連發: <span id="autoFireLabelFloating" class="text-rose-400">關閉</span>
+      </button>
+    </div>
+
+    <div class="sandbox-panel p-3 rounded-3xl flex items-center gap-3 border-2 border-amber-400/80 shadow-2xl bg-slate-900/95">
+      <div class="flex flex-col text-right">
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">即時手動發射台</span>
+        <span id="floatingCastHint" class="text-xs font-black text-amber-300 max-w-[140px] truncate">水炮 / 水柱噴發</span>
+      </div>
+
+      <button onclick="SandboxApp.castSelectedSkill()" class="action-btn w-16 h-16 px-3 py-2 rounded-2xl bg-gradient-to-tr from-sky-600 to-cyan-400 border-2 border-white shadow-lg flex flex-col items-center justify-center text-white active:scale-90">
+        <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+        <span class="text-[10px] font-black mt-0.5">普通發射</span>
+        <span class="text-[8px] opacity-80 font-pixel">[SPACE]</span>
+      </button>
+
+      <button onclick="SandboxApp.triggerSuperMoveCast()" class="action-btn px-4 py-2.5 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-rose-600 border-2 border-amber-300 shadow-xl flex flex-col items-center justify-center text-white active:scale-90">
+        <i class="fa-solid fa-burst text-2xl text-yellow-200 animate-pulse"></i>
+        <span class="text-xs font-black tracking-wide">全屏超武!</span>
+        <span class="text-[9px] text-amber-200 font-pixel">[SHIFT]</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 4. LEFT TEST CONTROLLER PANEL -->
+  <aside id="sidebarPanel" class="absolute left-2 top-14 bottom-2 z-20 w-80 sm:w-96 flex flex-col rounded-2xl sandbox-panel overflow-hidden transition-all duration-300 transform translate-x-0">
+    <div class="flex border-b border-slate-700 text-xs font-black bg-slate-900/60 shrink-0">
+      <button onclick="SandboxApp.switchTab('skills')" id="tabBtnSkills" class="flex-1 py-2.5 text-center border-b-2 border-amber-400 text-amber-400 flex items-center justify-center gap-1">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> 招數 & 超武
+      </button>
+      <button onclick="SandboxApp.switchTab('status')" id="tabBtnStatus" class="flex-1 py-2.5 text-center border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1">
+        <i class="fa-solid fa-biohazard"></i> 5大異常狀態
+      </button>
+      <button onclick="SandboxApp.switchTab('spawner')" id="tabBtnSpawner" class="flex-1 py-2.5 text-center border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1">
+        <i class="fa-solid fa-users"></i> 目標與木樁
+      </button>
+    </div>
+
+    <!-- TAB 1: SKILLS & ULTIMATE MOVES -->
+    <div id="tabSkills" class="p-3 space-y-3 overflow-y-auto flex-1 text-xs">
+      <div class="p-2.5 rounded-xl bg-slate-900/70 border border-slate-700 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-slate-300">招式等級 (Skill Lv)</span>
+          <span id="labelSkillLv" class="font-pixel text-amber-400 text-sm">Lv.1</span>
+        </div>
+        <input id="sliderSkillLv" type="range" min="1" max="10" value="1" oninput="SandboxApp.onSkillLvChange(this.value)" class="w-full h-1.5 bg-slate-700 rounded-lg cursor-pointer">
+        <div class="flex items-center justify-between pt-1">
+          <button id="btnToggleSuper" onclick="SandboxApp.toggleSuperMove()" class="w-full py-1.5 rounded-lg border text-xs font-black transition-all bg-slate-800 border-slate-600 text-slate-300 flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-crown text-amber-400"></i>
+            <span>切換為【Lv.10 全屏究極超武】形態</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex gap-1 bg-slate-950/60 p-1 rounded-lg border border-slate-800">
+        <button onclick="SandboxApp.filterSkills('all')" class="category-btn flex-1 py-1 rounded text-[11px] font-bold bg-slate-800 text-white">全部</button>
+        <button onclick="SandboxApp.filterSkills('rebuilt')" class="category-btn flex-1 py-1 rounded text-[11px] font-bold text-amber-300 hover:text-white">★ 旗艦修復</button>
+        <button onclick="SandboxApp.filterSkills('legendary')" class="category-btn flex-1 py-1 rounded text-[11px] font-bold text-purple-300 hover:text-white">傳說神獸</button>
+        <button onclick="SandboxApp.filterSkills('melee')" class="category-btn flex-1 py-1 rounded text-[11px] font-bold text-slate-400 hover:text-white">近戰近身</button>
+        <button onclick="SandboxApp.filterSkills('projectile')" class="category-btn flex-1 py-1 rounded text-[11px] font-bold text-slate-400 hover:text-white">遠程彈幕</button>
+      </div>
+
+      <div id="skillsCatalogGrid" class="grid grid-cols-1 gap-2"></div>
+    </div>
+
+    <!-- TAB 2: 5 MAJOR STATUS EFFECTS -->
+    <div id="tabStatus" class="hidden p-3 space-y-3 overflow-y-auto flex-1 text-xs">
+      <div class="p-2.5 rounded-xl bg-slate-900/70 border border-slate-700 space-y-1">
+        <div class="font-bold text-slate-200 flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-info text-cyan-400"></i> 正統像素狀態異常重構 (GBA/NDS 素材標準)
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          水系絕不引發冰凍（附帶腳底水渦減速）[cite: 2, 4]；火系灼傷明暗熱浪與雙層火舌[cite: 2, 3, 4]；電系高頻抽搐卡頓[cite: 2, 4]；冰系透明折射 3D 冰棺與碎冰破裂[cite: 2, 3, 4]；毒系紫色毒泡與劇毒骷髏[cite: 2, 3, 4]；混亂傾斜星芒問號與蛇形失控[cite: 2, 3, 4]。
+        </p>
+      </div>
+
+      <div class="space-y-2">
+        <div class="sandbox-card p-2.5 rounded-xl border-amber-600/60 bg-amber-950/20 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-orange-600/30 border border-orange-500 flex items-center justify-center text-orange-400 text-sm"><i class="fa-solid fa-fire-flame-curved"></i></div>
+            <div>
+              <div class="font-black text-orange-400">灼傷 (Burn) <span class="text-[10px] text-slate-400 font-mono">熱浪呼吸 + 雙層火苗</span></div>
+              <div class="text-[11px] text-slate-400">立繪熱浪呼吸、貼身雙層翻滾火苗、飄散黑煙火星，跳傷抽搐</div>
+            </div>
+          </div>
+          <button onclick="SandboxApp.applyStatusToTargets('Burn')" class="px-2.5 py-1.5 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg shadow shrink-0">施加</button>
+        </div>
+
+        <div class="sandbox-card p-2.5 rounded-xl border-purple-600/60 bg-purple-950/20 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-purple-600/30 border border-purple-500 flex items-center justify-center text-purple-400 text-sm"><i class="fa-solid fa-skull-crossbones"></i></div>
+            <div>
+              <div class="font-black text-purple-400">中毒 (Poison) <span class="text-[10px] text-slate-400 font-mono">劇毒氣泡 + 骷髏圖騰</span></div>
+              <div class="text-[11px] text-slate-400">表面深紫毒泡冒出破裂、頭頂懸浮骷髏符號、跳傷虛弱下沉</div>
+            </div>
+          </div>
+          <button onclick="SandboxApp.applyStatusToTargets('Poison')" class="px-2.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow shrink-0">施加</button>
+        </div>
+
+        <div class="sandbox-card p-2.5 rounded-xl border-yellow-500/60 bg-yellow-950/20 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-yellow-600/30 border border-yellow-500 flex items-center justify-center text-yellow-400 text-sm"><i class="fa-solid fa-bolt"></i></div>
+            <div>
+              <div class="font-black text-yellow-400">麻痺 (Paralysis) <span class="text-[10px] text-slate-400 font-mono">高頻電弧 + 神經抽搐頓停</span></div>
+              <div class="text-[11px] text-slate-400">周身高頻跳躍白金電弧、每隔0.3s卡頓頓停0.08s震顫</div>
+            </div>
+          </div>
+          <button onclick="SandboxApp.applyStatusToTargets('Paralysis')" class="px-2.5 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-slate-950 font-black rounded-lg shadow shrink-0">施加</button>
+        </div>
+
+        <div class="sandbox-card p-2.5 rounded-xl border-cyan-500/60 bg-cyan-950/20 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-cyan-600/30 border border-cyan-500 flex items-center justify-center text-cyan-400 text-sm"><i class="fa-solid fa-snowflake"></i></div>
+            <div>
+              <div class="font-black text-cyan-400">冰凍 (Freeze) <span class="text-[10px] text-slate-400 font-mono">3D折射冰棺 + 碎冰炸裂</span></div>
+              <div class="text-[11px] text-slate-400">雙層折射透明 3D 稜柱冰棺絕對封凍，解除或死亡時炸裂碎冰</div>
+            </div>
+          </div>
+          <button onclick="SandboxApp.applyStatusToTargets('Freeze')" class="px-2.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg shadow shrink-0">施加</button>
+        </div>
+
+        <div class="sandbox-card p-2.5 rounded-xl border-pink-500/60 bg-pink-950/20 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-pink-600/30 border border-pink-500 flex items-center justify-center text-pink-400 text-sm"><i class="fa-solid fa-head-side-virus"></i></div>
+            <div>
+              <div class="font-black text-pink-400">混亂 (Confusion) <span class="text-[10px] text-slate-400 font-mono">傾斜星芒問號 + 蛇形失控</span></div>
+              <div class="text-[11px] text-slate-400">頭頂傾斜橢圓旋轉四角星芒與問號，步態蛇形搖擺失控走位</div>
+            </div>
+          </div>
+          <button onclick="SandboxApp.applyStatusToTargets('Confusion')" class="px-2.5 py-1.5 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-lg shadow shrink-0">施加</button>
+        </div>
+      </div>
+
+      <div class="pt-2 grid grid-cols-2 gap-2">
+        <button onclick="SandboxApp.applyAllStatusesTogether()" class="py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-lg shadow">
+          <i class="fa-solid fa-layer-group"></i> 5重全狀態疊加
+        </button>
+        <button onclick="SandboxApp.cleanseAllStatuses()" class="py-2 bg-emerald-800 hover:bg-emerald-700 text-emerald-100 font-bold rounded-lg shadow">
+          <i class="fa-solid fa-sparkles"></i> 萬靈藥淨化全場
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 3: DUMMY SPAWNER -->
+    <div id="tabSpawner" class="hidden p-3 space-y-3 overflow-y-auto flex-1 text-xs">
+      <div class="p-2.5 rounded-xl bg-slate-900/70 border border-slate-700 space-y-2">
+        <div class="font-bold text-slate-200">木樁屬性與行為模式</div>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="flex items-center gap-2 text-slate-300 cursor-pointer">
+            <input type="checkbox" id="chkImmortal" checked class="rounded accent-amber-400">
+            <span>木樁無敵 (不被擊殺)</span>
+          </label>
+          <label class="flex items-center gap-2 text-slate-300 cursor-pointer">
+            <input type="checkbox" id="chkAutoRespawn" checked class="rounded accent-amber-400">
+            <span>死亡自動重生</span>
+          </label>
+          <label class="flex items-center gap-2 text-slate-300 cursor-pointer">
+            <input type="checkbox" id="chkEnemyMove" class="rounded accent-amber-400">
+            <span>允許敵人緩步移動</span>
+          </label>
+          <label class="flex items-center gap-2 text-slate-300 cursor-pointer">
+            <input type="checkbox" id="chkShowHitbox" checked class="rounded accent-amber-400">
+            <span>顯示受擊判定圈</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="space-y-1.5">
+        <div class="font-bold text-slate-300">快速陣列排布生成</div>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="SandboxApp.spawnFormation('single')" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 font-bold text-slate-200">單體靶心木樁</button>
+          <button onclick="SandboxApp.spawnFormation('line')" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 font-bold text-slate-200">直線貫穿 5 連排</button>
+          <button onclick="SandboxApp.spawnFormation('circle')" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 font-bold text-slate-200">環形 360° 包圍群</button>
+          <button onclick="SandboxApp.spawnFormation('boss')" class="p-2 rounded-lg bg-gradient-to-r from-red-900/80 to-purple-900/80 hover:from-red-800 border border-red-500 font-black text-amber-300">傳說超夢 BOSS 木樁</button>
+        </div>
+      </div>
+
+      <div class="space-y-1.5">
+        <div class="font-bold text-slate-300">選擇生成寶可夢種族</div>
+        <div id="dummySpeciesGrid" class="grid grid-cols-3 gap-1.5"></div>
+      </div>
+    </div>
+
+    <div id="inspectorFooter" class="p-2.5 bg-slate-950/80 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
+      <div class="flex items-center gap-1.5 truncate">
+        <i class="fa-solid fa-crosshairs text-amber-400"></i>
+        <span id="txtCurrentAim">目標：畫面中心木樁 (點擊畫布移動發射者)</span>
+      </div>
+      <span class="text-slate-500 shrink-0">右鍵拖曳平移</span>
+    </div>
+  </aside>
+
+  <!-- 5. RIGHT FLOATING INSPECTOR CARD -->
+  <div id="targetInspectorCard" class="hidden absolute right-3 top-14 z-20 w-64 p-3 rounded-2xl sandbox-panel text-xs space-y-2">
+    <div class="flex items-center justify-between border-b border-slate-700 pb-1.5">
+      <div class="flex items-center gap-2">
+        <img id="inspSprite" src="" class="w-8 h-8 pixel-sprite" alt="target"/>
+        <div>
+          <div id="inspName" class="font-black text-slate-200 text-sm">小拉達</div>
+          <div id="inspTypes" class="flex gap-1 mt-0.5"></div>
+        </div>
+      </div>
+      <button onclick="document.getElementById('targetInspectorCard').classList.add('hidden')" class="text-slate-500 hover:text-white">✕</button>
+    </div>
+
+    <div class="space-y-1 font-mono text-[11px]">
+      <div class="flex justify-between">
+        <span class="text-slate-400">當前生命 HP:</span>
+        <span id="inspHp" class="text-emerald-400 font-bold">1000/1000</span>
+      </div>
+      <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+        <div id="inspHpBar" class="h-full bg-emerald-500 transition-all duration-75" style="width: 100%"></div>
+      </div>
+    </div>
+
+    <div class="space-y-1">
+      <div class="text-[10px] text-slate-400 font-bold">當前受附狀態效果：</div>
+      <div id="inspStatusTags" class="flex flex-wrap gap-1">
+        <span class="text-[10px] text-slate-500 italic">無異常狀態</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * ============================================================================
+     * 1. POKÉMON DATA & TYPE RELATIONSHIPS (STRICT CANON STATUS MAPPING)
+     * ============================================================================
+     */
+    const TYPE_META = {
+      Grass:    { zh: "草",   color: "#78C850", status: "Poison" },
+      Fire:     { zh: "火",   color: "#F08030", status: "Burn" },
+      Water:    { zh: "水",   color: "#6890F0", status: null },
+      Electric: { zh: "電",   color: "#F8D030", status: "Paralysis" },
+      Psychic:  { zh: "超能", color: "#F85888", status: "Confusion" },
+      Ghost:    { zh: "幽靈", color: "#705898", status: "Confusion" },
+      Ice:      { zh: "冰",   color: "#98D8D8", status: "Freeze" },
+      Poison:   { zh: "毒",   color: "#A040A0", status: "Poison" },
+      Flying:   { zh: "飛行", color: "#A890F0", status: null },
+      Bug:      { zh: "蟲",   color: "#A8B820", status: "Poison" },
+      Normal:   { zh: "一般", color: "#A8A878", status: null },
+      Fighting: { zh: "格鬥", color: "#C03028", status: null },
+      Ground:   { zh: "地面", color: "#E0C068", status: null },
+      Rock:     { zh: "岩石", color: "#B8A038", status: null },
+      Dragon:   { zh: "龍",   color: "#7038F8", status: "Burn" }
+    };
+
+    const TYPE_CHART = {
+      Grass:    { super: ["Water", "Ground", "Rock"], weak: ["Fire", "Grass", "Poison", "Flying", "Bug", "Dragon"] },
+      Fire:     { super: ["Grass", "Ice", "Bug"], weak: ["Fire", "Water", "Rock", "Dragon"] },
+      Water:    { super: ["Fire", "Ground", "Rock"], weak: ["Water", "Grass", "Dragon"] },
+      Electric: { super: ["Water", "Flying"], weak: ["Electric", "Grass", "Ground", "Dragon"] },
+      Ice:      { super: ["Grass", "Ground", "Flying", "Dragon"], weak: ["Fire", "Water", "Ice"] },
+      Poison:   { super: ["Grass"], weak: ["Poison", "Ground", "Rock", "Ghost"] },
+      Flying:   { super: ["Grass", "Fighting", "Bug"], weak: ["Electric", "Rock"] },
+      Psychic:  { super: ["Fighting", "Poison"], weak: ["Psychic"] },
+      Bug:      { super: ["Grass", "Psychic"], weak: ["Fire", "Fighting", "Poison", "Flying", "Ghost"] },
+      Ghost:    { super: ["Psychic", "Ghost"], weak: ["Normal"] },
+      Fighting: { super: ["Normal", "Ice", "Rock"], weak: ["Poison", "Flying", "Psychic", "Bug"] },
+      Ground:   { super: ["Fire", "Electric", "Poison", "Rock"], weak: ["Grass", "Bug"] },
+      Rock:     { super: ["Fire", "Ice", "Flying", "Bug"], weak: ["Fighting", "Ground"] },
+      Dragon:   { super: ["Dragon"], weak: [] },
+      Normal:   { super: [], weak: ["Rock", "Ghost"] }
+    };
+
+    function getTypeMultiplier(moveType, targetType1, targetType2) {
+      const chart = TYPE_CHART[moveType];
+      if (!chart) return 1.0;
+      let mult = 1.0;
+      [targetType1, targetType2].forEach(t => {
+        if (!t || t === "None") return;
+        if (chart.super.includes(t)) mult *= 1.5;
+        else if (chart.weak.includes(t)) mult *= 0.65;
+      });
+      return mult;
+    }
+
+    const SPECIES_PRESETS = [
+      { id: 19,  name: "小拉達", type1: "Normal",   type2: "None", hp: 450, radius: 18, sprite: "https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/sprite/forward/19.png" },
+      { id: 2,   name: "妙蛙草", type1: "Grass",    type2: "Poison", hp: 800, radius: 24, sprite: "https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/sprite/forward/2.png" },
+      { id: 6,   name: "噴火龍", type1: "Fire",     type2: "Flying", hp: 1200, radius: 32, sprite: "https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/sprite/forward/6.png" },
+      { id: 9,   name: "水箭龜", type1: "Water",    type2: "None", hp: 1350, radius: 30, sprite: "https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/sprite/forward/9.png" },
+      { id: 94,  name: "耿鬼",   type1: "Ghost",    type2: "Poison", hp: 1100, radius: 26, sprite: "https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/sprite/forward/94.png" },
+      { id: 144, name: "急凍鳥", type1: "Ice",      type2: "Flying", hp: 4500, radius: 38, isBoss: true, sprite: "https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/sprite/forward/144.png" },
+      { id: 145, name: "閃電鳥", type1: "Electric", type2: "Flying", hp: 4600, radius: 38, isBoss: true, sprite: "https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/sprite/forward/145.png" },
+      { id: 146, name: "火焰鳥", type1: "Fire",     type2: "Flying", hp: 4500, radius: 38, isBoss: true, sprite: "https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/sprite/forward/146.png" },
+      { id: 150, name: "超夢",   type1: "Psychic",  type2: "None",   hp: 9500, radius: 44, isBoss: true, sprite: "https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/sprite/forward/150.png" },
+      { id: 151, name: "夢幻",   type1: "Psychic",  type2: "None",   hp: 7500, radius: 32, isBoss: true, sprite: "https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/sprite/forward/151.png" }
+    ];
+
+    /**
+     * ============================================================================
+     * 2. REBUILT SKILLS CATALOG (V8 旗艦終極版)
+     * ============================================================================
+     */
+    const SKILLS_DATA = [
+      {
+        id: "Hydro Pump",
+        name: "水炮 / 水柱噴湧",
+        superName: "巨浪加農・八方立體柱體噴發",
+        category: "projectile",
+        isRebuilt: true,
+        type: "Water",
+        color: "#38BDF8",
+        baseDmg: 45,
+        desc: "【高壓流體阻力 & 浪花水花】正弦波紋柱體噴射，前端炸開白色浪花冠與密集水珠微粒，激流減速絕不結冰！",
+        superDesc: "【超武八方水柱】四面八方 8 道超粗高壓水流柱體噴湧，終端伴隨巨浪衝擊與水花風暴！"
+      },
+      {
+        id: "Vine Whip",
+        name: "藤鞭",
+        superName: "森羅瘋狂植物・地下荊棘破土",
+        category: "melee",
+        isRebuilt: true,
+        type: "Grass",
+        color: "#15803D",
+        baseDmg: 35,
+        desc: "【倒刺三角、芽苞圓點與末端音爆】實體S藤蔓甩動，兩側帶棘刺嫩芽，末端炸開雙層音爆氣環與飛葉散射！",
+        superDesc: "【超武森羅】地下破土竄出 10 根巨型粗大荊棘藤蔓群，立體鞭笞全屏敵群！"
+      },
+      {
+        id: "Earthquake",
+        name: "地震 / 泰山壓頂",
+        superName: "大地脈動裂破・崩石地衝",
+        category: "melee",
+        isRebuilt: true,
+        type: "Ground",
+        color: "#D97706",
+        baseDmg: 48,
+        desc: "【平衡版內外圈雙層裂隙】半徑收斂至 115+lv*6；核心 55% 造成 100% 重擊與向上飛石，外圈造成 60% 震盪與減速！",
+        superDesc: "【超武地裂・崩石暴起】12 道立體縱深地裂放射溝壑延伸至全屏，伴隨巨岩暴起崩壞與向上炸裂碎石！"
+      },
+      {
+        id: "Thunderbolt",
+        name: "十萬伏特 (三連雷擊)",
+        superName: "萬雷伏特攻擊 (神罰階梯萬雷)",
+        category: "projectile",
+        isRebuilt: true,
+        type: "Electric",
+        color: "#FACC15",
+        baseDmg: 40,
+        desc: "【200px 射程平衡 & 消除近身盲點】射程優化至 200px！發射源自帶 70px 靜電防護圈徹底修復死區，終端 50px 星芒爆裂！",
+        superDesc: "【三段連鎖萬雷超武】第1擊貼身電弧爆震 ➔ 第2擊四向分叉狂雷 ➔ 第3擊全屏萬雷轟頂！"
+      },
+      {
+        id: "Flamethrower",
+        name: "噴射火焰",
+        superName: "大字爆炎・向前推進巨型炎殺波",
+        category: "projectile",
+        isRebuilt: true,
+        type: "Fire",
+        color: "#F08030",
+        baseDmg: 35,
+        desc: "【真實翻滾火舌】滾動淚滴火舌與白/黃/橙/紅三層色溫漸變，沿途拋散上升火星（Embers），命中引發灼傷！",
+        superDesc: "【超武焦土性能版】向前轟出推進式「大」字炎殺波，穿透全屏敵群並以定距低消耗鋪設燃燒焦土地火！"
+      },
+      {
+        id: "Karate Chop",
+        name: "空手劈",
+        superName: "武神百裂拳・重型巨拳風暴",
+        category: "melee",
+        isRebuilt: true,
+        type: "Fighting",
+        color: "#EF4444",
+        baseDmg: 42,
+        desc: "【螺旋格鬥巨拳印】向前螺旋轟出半透明赤紅巨拳印，數量隨等級提升，帶音爆氣環！",
+        superDesc: "【超武百裂拳修復】發射源爆發赤紅環形氣爆波紋，立體螺旋連環轟出 18 枚清晰格鬥神拳印！"
+      },
+      {
+        id: "Slash",
+        name: "劈開 / 居合",
+        superName: "居合極限瞬斬・空間撕裂",
+        category: "melee",
+        isRebuilt: true,
+        type: "Normal",
+        color: "#38BDF8",
+        baseDmg: 42,
+        desc: "【動態雙層弧線 & 三層空間裂痕】主刀光後方追加 2 道延遲漸隱動態殘影弧線，三層青藍刀芒中近程重劈帶火花與高暴擊！",
+        superDesc: "【超武居合風暴】160° 超寬幅雙層居合風暴，撕裂空間留有滯留真空間隙與爆裂金星！"
+      },
+      {
+        id: "Scratch",
+        name: "抓",
+        superName: "疾風狂暴三段交錯撕裂爪",
+        category: "melee",
+        isRebuilt: true,
+        type: "Normal",
+        color: "#E2E8F0",
+        baseDmg: 32,
+        desc: "【三段階梯多段交錯爪】0.0s右上傾斜爪 ➔ 0.08s左上反向傾斜爪 ➔ 0.16s正中X型交叉爆裂星芒，3 Hits 受擊！",
+        superDesc: "【超武撕裂爪修復】超大範圍快速多段階梯交錯撕裂，伴隨密集金星爆裂與強力硬直！"
+      },
+      {
+        id: "Seed Bomb",
+        name: "種子炸彈",
+        superName: "爆裂種子狂潮・多重分裂孢子雨",
+        category: "projectile",
+        isRebuilt: true,
+        type: "Grass",
+        color: "#65A30D",
+        baseDmg: 38,
+        desc: "【拋物線木紋堅果修復】拋物線高拋立體硬質木紋橡子，砸地劇烈炸裂為 6 枚碎殼與濃密綠色孢子霧！",
+        superDesc: "【超武種子雨修復】漫天降下巨大堅果種子連環爆炸，爆開全屏翠綠孢子毒霧！"
+      },
+      {
+        id: "Ice Beam",
+        name: "急凍光線",
+        superName: "絕對零度極寒暴風雪",
+        category: "projectile",
+        isRebuilt: true,
+        type: "Ice",
+        color: "#06B6D4",
+        baseDmg: 35,
+        desc: "【筆直冰柱射線束】高速連射筆直穿透的六角射線冰柱束，沿途拋灑寒霜微粒，命中爆散碎冰！",
+        superDesc: "【超武暴風雪修復】向前席捲旋轉六角冰棱風暴與霜凍冰徑，被命中者封入透明六角冰雕！"
+      },
+      {
+        id: "Shadow Ball",
+        name: "暗影球",
+        superName: "冥界暗影引力黑洞・星雲爆裂",
+        category: "projectile",
+        isRebuilt: true,
+        type: "Ghost",
+        color: "#A855F7",
+        baseDmg: 36,
+        desc: "【自轉黑洞核 & 引力暗靈尾氣】純黑深核外包紫光環，帶逆時針自轉吸扯螺旋臂與向內收縮暗靈微粒。",
+        superDesc: "【二段式漸進放大黑洞】前段保持 15px 高密奇點穿行，中遠程 S 型平滑爆發吸附膨脹至 155px 完全體，終端星雲爆裂！"
+      },
+      {
+        id: "Legendary_Zapdos",
+        name: "【閃電鳥】電磁加農・雷羽連鎖",
+        superName: "雷神降臨・神罰終焉雷暴",
+        category: "legendary",
+        isLegendary: true,
+        type: "Electric",
+        color: "#FACC15",
+        baseDmg: 54,
+        desc: "【刺地連鎖修復】射出 5 根金黃雷羽刺地，羽毛著地後相互連鎖跳躍放射高壓電弧！",
+        superDesc: "【動態非直線閃爍電網】鋸齒雷芒球蓄力 ➔ 6向垂直雙層神罰巨雷 ➔ 節點高頻抽搐跳躍非直線白熾閃爍電網！"
+      },
+      {
+        id: "Legendary_Articuno",
+        name: "【急凍鳥】暴風雪・極光寒霜",
+        superName: "絕對零度・極光帷幕",
+        category: "legendary",
+        isLegendary: true,
+        type: "Ice",
+        color: "#38BDF8",
+        baseDmg: 52,
+        desc: "【冰棱碎裂修復】揮出 2 道旋轉冰風，末端爆散雙層立體菱形折射冰晶與雪花碎屑！",
+        superDesc: "【極光重構】全屏升騰藍綠紫三色漸變動態極光幔帳，地面浮現六角霜花陣並將全場封入透明冰棺！"
+      },
+      {
+        id: "Legendary_Moltres",
+        name: "【火焰鳥】熱風・不死鳥炎翼",
+        superName: "神鳥猛擊・不死鳥炎印",
+        category: "legendary",
+        isLegendary: true,
+        type: "Fire",
+        color: "#F97316",
+        baseDmg: 54,
+        desc: "【風刃火浪翻滾】雙翼揮出前方帶金黃風刃、內部翻滾烈焰火苗與上升火星的 90° 寬幅熱風巨浪！",
+        superDesc: "【實時定距延伸熔岩地火】白熾鳥首、金翼、黑紅尾羽的火鳳凰衝刺，身後實時定距拉出燃燒熔岩地火尾跡！"
+      },
+      {
+        id: "Legendary_Mewtwo",
+        name: "【超夢】精神念刃・實體念動",
+        superName: "精神擊破・次元崩解",
+        category: "legendary",
+        isLegendary: true,
+        type: "Psychic",
+        color: "#C084FC",
+        baseDmg: 58,
+        desc: "【空間次元斬 & 鏡面折射菱片】純白激光邊深紫黑新月刃，軌跡兩側動態滯留 3~4 片傾斜折射鏡面菱片並碎裂！",
+        superDesc: "【超能奇點重構】胸前凝聚吸收光線的純黑引力奇點 ➔ 8 向純白激光射線切割 ➔ 木樁念力眼浮空禁錮！"
+      },
+      {
+        id: "Legendary_Mew",
+        name: "【夢幻】起源光彈・五彩交響",
+        superName: "幻之始祖・星雲創世",
+        category: "legendary",
+        isLegendary: true,
+        type: "Psychic",
+        color: "#F472B6",
+        baseDmg: 50,
+        desc: "【基因光泡】連發帶彩虹折射的半透明光泡，拖曳星塵尾跡，命中爆出隨機屬性微粒！",
+        superDesc: "【五彩流星雨】夢幻化作粉白光球升空，全屏傾瀉紅/藍/綠/黃/紫交錯的五彩流星雨風暴！"
+      }
+    ];
+
+    /**
+     * ============================================================================
+     * 3. SPRITE CACHE
+     * ============================================================================
+     */
+    const SpriteCache = {
+      cache: new Map(),
+      get(url) {
+        if (!url) return null;
+        if (this.cache.has(url)) return this.cache.get(url);
+        const img = new Image();
+        const record = { img, loaded: false };
+        img.onload = () => { record.loaded = true; };
+        img.src = url;
+        this.cache.set(url, record);
+        return record;
+      }
+    };
+
+    /**
+     * ============================================================================
+     * 4. MAIN TEST SANDBOX ENGINE (V8)
+     * ============================================================================
+     */
+    const SandboxApp = {
+      canvas: null,
+      ctx: null,
+      width: 0,
+      height: 0,
+      isPaused: false,
+      sidebarOpen: true,
+      timeScale: 1.0,
+      camera: { x: 0, y: 0, zoom: 1.0, isDragging: false, lastX: 0, lastY: 0 },
+
+      caster: {
+        x: 0,
+        y: 0,
+        facingX: 1,
+        facingY: 0,
+        sprite: "https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/sprite/forward/25.png"
+      },
+
+      activeTab: "skills",
+      selectedSkillId: "Shadow Ball",
+      skillLevel: 1,
+      isSuperMove: false,
+      isAutoFire: false,
+      autoFireTimer: 0,
+      autoFireInterval: 0.8,
+      selectedSpecies: SPECIES_PRESETS[0],
+      selectedDummy: null,
+
+      dummies: [],
+      projectiles: [],
+      particles: [],
+      lightningArcs: [],
+      meleeEffects: [],
+      ultimateEffects: [],
+      floatingTexts: [],
+      groundZones: [],
+      mirrorShards: [], // 超夢念刃專屬空間鏡面碎塊
+      screenShake: { timer: 0, magnitude: 0 },
+
+      fps: 60,
+      frameCount: 0,
+      lastFpsTime: performance.now(),
+      damageHistory: [],
+
+      init() {
+        this.canvas = document.getElementById("sandboxCanvas");
+        this.ctx = this.canvas.getContext("2d");
+        this.resize();
+        window.addEventListener("resize", () => this.resize());
+
+        this.bindEvents();
+        this.renderSkillsCatalog();
+        this.renderSpeciesGrid();
+        this.spawnFormation("single");
+        this.updateFloatingHint();
+
+        this.lastTime = performance.now();
+        requestAnimationFrame((t) => this.loop(t));
+      },
+
+      resize() {
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+      },
+
+      toggleSidebar() {
+        this.sidebarOpen = !this.sidebarOpen;
+        const panel = document.getElementById("sidebarPanel");
+        const icon = document.getElementById("toggleSidebarIcon");
+        const text = document.getElementById("toggleSidebarText");
+        if (this.sidebarOpen) {
+          panel.style.transform = "translateX(0)";
+          icon.className = "fa-solid fa-chevron-left";
+          text.textContent = "收合面板";
+        } else {
+          panel.style.transform = "translateX(-115%)";
+          icon.className = "fa-solid fa-chevron-right";
+          text.textContent = "展開面板";
+        }
+      },
+
+      toggleSlowMo() {
+        this.timeScale = this.timeScale === 1.0 ? 0.3 : 1.0;
+        const text = document.getElementById("slowMoText");
+        const btn = document.getElementById("btnSlowMo");
+        if (this.timeScale < 1.0) {
+          text.textContent = "正常速度 (1.0x)";
+          btn.className = "action-btn px-2.5 py-1 rounded-xl bg-amber-600 border border-amber-300 text-[11px] font-bold text-white shadow flex items-center gap-1";
+        } else {
+          text.textContent = "慢動作 (0.3x)";
+          btn.className = "action-btn px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-[11px] font-bold text-slate-200 flex items-center gap-1";
+        }
+      },
+
+      triggerSuperMoveCast() {
+        const prev = this.isSuperMove;
+        this.isSuperMove = true;
+        this.castSelectedSkill();
+        this.isSuperMove = prev;
+      },
+
+      updateFloatingHint() {
+        const sk = SKILLS_DATA.find(s => s.id === this.selectedSkillId);
+        const hintEl = document.getElementById("floatingCastHint");
+        if (sk && hintEl) {
+          hintEl.textContent = this.isSuperMove ? sk.superName : sk.name;
+        }
+      },
+
+      bindEvents() {
+        window.addEventListener("keydown", (e) => {
+          if (e.target.tagName === "INPUT") return;
+          if (e.code === "Space") {
+            e.preventDefault();
+            this.castSelectedSkill();
+          } else if (e.code === "ShiftLeft" || e.code === "ShiftRight") {
+            e.preventDefault();
+            this.triggerSuperMoveCast();
+          }
+        });
+
+        this.canvas.addEventListener("mousedown", (e) => {
+          if (e.button === 0) {
+            const worldPos = this.screenToWorld(e.clientX, e.clientY);
+            const clicked = this.findDummyAt(worldPos.x, worldPos.y);
+            if (clicked) {
+              this.selectDummy(clicked);
+              return;
+            }
+
+            if (e.shiftKey) {
+              this.spawnDummyAt(worldPos.x, worldPos.y, this.selectedSpecies);
+            } else {
+              this.caster.x = worldPos.x;
+              this.caster.y = worldPos.y;
+              document.getElementById("txtCurrentAim").textContent = `發射源已設定至 (${Math.round(worldPos.x)}, ${Math.round(worldPos.y)})`;
+            }
+          } else if (e.button === 2) {
+            this.camera.isDragging = true;
+            this.camera.lastX = e.clientX;
+            this.camera.lastY = e.clientY;
+          }
+        });
+
+        window.addEventListener("mousemove", (e) => {
+          if (this.camera.isDragging) {
+            const dx = e.clientX - this.camera.lastX;
+            const dy = e.clientY - this.camera.lastY;
+            this.camera.x -= dx;
+            this.camera.y -= dy;
+            this.camera.lastX = e.clientX;
+            this.camera.lastY = e.clientY;
+          }
+        });
+
+        window.addEventListener("mouseup", () => {
+          this.camera.isDragging = false;
+        });
+
+        this.canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+      },
+
+      screenToWorld(sx, sy) {
+        return {
+          x: sx - this.width / 2 + this.camera.x,
+          y: sy - this.height / 2 + this.camera.y
+        };
+      },
+
+      worldToScreen(wx, wy) {
+        return {
+          x: wx - this.camera.x + this.width / 2,
+          y: wy - this.camera.y + this.height / 2
+        };
+      },
+
+      findDummyAt(wx, wy) {
+        for (const d of this.dummies) {
+          if (Math.hypot(d.x - wx, d.y - wy) <= d.radius + 8) return d;
+        }
+        return null;
+      },
+
+      switchTab(tab) {
+        this.activeTab = tab;
+        ["Skills", "Status", "Spawner"].forEach(t => {
+          const btn = document.getElementById(`tabBtn${t}`);
+          const content = document.getElementById(`tab${t}`);
+          if (t.toLowerCase() === tab) {
+            btn.className = "flex-1 py-2.5 text-center border-b-2 border-amber-400 text-amber-400 flex items-center justify-center gap-1";
+            content.classList.remove("hidden");
+          } else {
+            btn.className = "flex-1 py-2.5 text-center border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1";
+            content.classList.add("hidden");
+          }
+        });
+      },
+
+      renderSkillsCatalog(filter = "all") {
+        const grid = document.getElementById("skillsCatalogGrid");
+        let filtered = SKILLS_DATA;
+        if (filter === "rebuilt") {
+          filtered = SKILLS_DATA.filter(s => s.isRebuilt);
+        } else if (filter === "legendary") {
+          filtered = SKILLS_DATA.filter(s => s.isLegendary);
+        } else if (filter !== "all") {
+          filtered = SKILLS_DATA.filter(s => s.category === filter);
+        }
+
+        grid.innerHTML = filtered.map(sk => {
+          const isSelected = this.selectedSkillId === sk.id;
+          return `
+            <div onclick="SandboxApp.selectSkill('${sk.id}')" class="sandbox-card p-2.5 rounded-xl cursor-pointer ${isSelected ? 'active' : ''}">
+              <div class="flex items-center justify-between gap-1 mb-1">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${sk.color}"></span>
+                  <strong class="text-sm font-black text-slate-100 truncate">${sk.name}</strong>
+                  ${sk.isRebuilt ? `<span class="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-400 text-slate-900 shrink-0">修復</span>` : ''}
+                  <span class="px-1.5 py-0.2 rounded text-[10px] font-bold text-white shrink-0" style="background:${TYPE_META[sk.type].color}">${TYPE_META[sk.type].zh}</span>
+                </div>
+                <span class="text-[10px] text-amber-300 font-mono shrink-0">Dmg ${sk.baseDmg}</span>
+              </div>
+              <div class="text-[11px] text-slate-300 leading-tight">${this.isSuperMove ? `<strong class="text-amber-400">【超武】</strong>${sk.superDesc}` : sk.desc}</div>
+            </div>
+          `;
+        }).join("");
+      },
+
+      filterSkills(cat) {
+        document.querySelectorAll(".category-btn").forEach(b => {
+          b.className = "category-btn flex-1 py-1 rounded text-[11px] font-bold text-slate-400 hover:text-white";
+        });
+        event.target.className = "category-btn flex-1 py-1 rounded text-[11px] font-bold bg-slate-800 text-white";
+        this.renderSkillsCatalog(cat);
+      },
+
+      selectSkill(id) {
+        this.selectedSkillId = id;
+        this.renderSkillsCatalog();
+        this.updateFloatingHint();
+        const sk = SKILLS_DATA.find(s => s.id === id);
+        if (sk) {
+          document.getElementById("txtCurrentAim").textContent = `已切換招式：【${this.isSuperMove ? sk.superName : sk.name}】`;
+        }
+      },
+
+      onSkillLvChange(val) {
+        this.skillLevel = parseInt(val);
+        document.getElementById("labelSkillLv").textContent = `Lv.${val}`;
+        if (this.skillLevel === 10 && !this.isSuperMove) {
+          this.toggleSuperMove(true);
+        } else if (this.skillLevel < 10 && this.isSuperMove) {
+          this.toggleSuperMove(false);
+        }
+      },
+
+      toggleSuperMove(forcedState) {
+        this.isSuperMove = forcedState !== undefined ? forcedState : !this.isSuperMove;
+        const btn = document.getElementById("btnToggleSuper");
+        if (this.isSuperMove) {
+          this.skillLevel = 10;
+          document.getElementById("sliderSkillLv").value = 10;
+          document.getElementById("labelSkillLv").textContent = `Lv.10 超武`;
+          btn.className = "w-full py-1.5 rounded-lg border text-xs font-black transition-all bg-gradient-to-r from-amber-500 to-orange-500 border-amber-300 text-slate-950 flex items-center justify-center gap-1.5 shadow-lg";
+        } else {
+          if (this.skillLevel === 10) this.skillLevel = 9;
+          document.getElementById("sliderSkillLv").value = this.skillLevel;
+          document.getElementById("labelSkillLv").textContent = `Lv.${this.skillLevel}`;
+          btn.className = "w-full py-1.5 rounded-lg border text-xs font-black transition-all bg-slate-800 border-slate-600 text-slate-300 flex items-center justify-center gap-1.5";
+        }
+        this.renderSkillsCatalog();
+        this.updateFloatingHint();
+      },
+
+      toggleAutoFire() {
+        this.isAutoFire = !this.isAutoFire;
+        const lbl = document.getElementById("autoFireLabelFloating");
+        if (lbl) {
+          lbl.textContent = this.isAutoFire ? "開啟" : "關閉";
+          lbl.className = this.isAutoFire ? "text-emerald-400 font-bold" : "text-rose-400";
+        }
+      },
+
+      renderSpeciesGrid() {
+        const grid = document.getElementById("dummySpeciesGrid");
+        grid.innerHTML = SPECIES_PRESETS.map((p, idx) => `
+          <div onclick="SandboxApp.selectSpecies(${idx})" class="sandbox-card p-1.5 rounded-lg cursor-pointer flex flex-col items-center ${this.selectedSpecies.id === p.id ? 'active' : ''}">
+            <img src="${p.sprite}" class="w-10 h-10 pixel-sprite object-contain my-1" alt="${p.name}"/>
+            <span class="font-bold text-[11px] text-slate-200 truncate w-full text-center">${p.name}</span>
+            <span class="text-[9px] text-slate-400 font-mono">HP ${p.hp}</span>
+          </div>
+        `).join("");
+      },
+
+      selectSpecies(idx) {
+        this.selectedSpecies = SPECIES_PRESETS[idx];
+        this.renderSpeciesGrid();
+      },
+
+      selectDummy(dummy) {
+        this.selectedDummy = dummy;
+        const card = document.getElementById("targetInspectorCard");
+        document.getElementById("inspSprite").src = dummy.sprite;
+        document.getElementById("inspName").textContent = `${dummy.name} #${dummy.id}`;
+        document.getElementById("inspTypes").innerHTML = `
+          <span class="px-1.5 py-0.2 rounded text-[9px] font-bold text-white" style="background:${TYPE_META[dummy.type1].color}">${TYPE_META[dummy.type1].zh}</span>
+          ${dummy.type2 !== "None" ? `<span class="px-1.5 py-0.2 rounded text-[9px] font-bold text-white" style="background:${TYPE_META[dummy.type2].color}">${TYPE_META[dummy.type2].zh}</span>` : ''}
+        `;
+        this.updateInspectorStats();
+        card.classList.remove("hidden");
+      },
+
+      updateInspectorStats() {
+        if (!this.selectedDummy) return;
+        const d = this.selectedDummy;
+        document.getElementById("inspHp").textContent = `${Math.ceil(d.hp)}/${d.maxHp}`;
+        document.getElementById("inspHpBar").style.width = `${Math.max(0, (d.hp / d.maxHp) * 100)}%`;
+
+        const tagsContainer = document.getElementById("inspStatusTags");
+        const activeStatuses = Object.keys(d.statuses);
+        if (activeStatuses.length === 0) {
+          tagsContainer.innerHTML = `<span class="text-[10px] text-slate-500 italic">無異常狀態</span>`;
+        } else {
+          tagsContainer.innerHTML = activeStatuses.map(st => {
+            const colors = { Burn: "#F97316", Poison: "#A855F7", Paralysis: "#FACC15", Freeze: "#38BDF8", Confusion: "#F472B6", HydroDrag: "#0284C7" };
+            const names = { Burn: "灼傷", Poison: "中毒", Paralysis: "麻痺", Freeze: "冰凍", Confusion: "混亂", HydroDrag: "水流減速" };
+            return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-950" style="background:${colors[st] || '#fff'}">${names[st] || st} (${d.statuses[st].toFixed(1)}s)</span>`;
+          }).join("");
+        }
+      },
+
+      spawnFormation(type) {
+        this.dummies = [];
+        const cx = 180, cy = 0;
+        if (type === "single") {
+          this.spawnDummyAt(cx, cy, this.selectedSpecies);
+        } else if (type === "line") {
+          for (let i = 0; i < 5; i++) {
+            this.spawnDummyAt(cx + i * 70, cy, this.selectedSpecies);
+          }
+        } else if (type === "circle") {
+          const count = 10;
+          const radius = 170;
+          for (let i = 0; i < count; i++) {
+            const angle = (i * Math.PI * 2) / count;
+            this.spawnDummyAt(this.caster.x + Math.cos(angle) * radius, this.caster.y + Math.sin(angle) * radius, this.selectedSpecies);
+          }
+        } else if (type === "boss") {
+          const mewtwo = SPECIES_PRESETS.find(p => p.id === 150) || SPECIES_PRESETS[SPECIES_PRESETS.length - 1];
+          this.spawnDummyAt(cx + 80, cy, mewtwo);
+        }
+      },
+
+      spawnDummyAt(x, y, species) {
+        const dummy = {
+          uid: Math.random().toString(36).substring(2, 9),
+          id: species.id,
+          name: species.name,
+          type1: species.type1,
+          type2: species.type2,
+          hp: species.hp,
+          maxHp: species.hp,
+          radius: species.radius,
+          sprite: species.sprite,
+          isBoss: !!species.isBoss,
+          x,
+          y,
+          spawnX: x,
+          spawnY: y,
+          facingX: -1,
+          statuses: {},
+          dotTickTimer: 0.5,
+          twitchTimer: 0,
+          levitateOffset: 0
+        };
+        this.dummies.push(dummy);
+        this.selectDummy(dummy);
+      },
+
+      clearAllDummies() {
+        this.dummies = [];
+        this.projectiles = [];
+        this.meleeEffects = [];
+        this.ultimateEffects = [];
+        this.particles = [];
+        this.lightningArcs = [];
+        this.floatingTexts = [];
+        this.groundZones = [];
+        this.mirrorShards = [];
+        document.getElementById("targetInspectorCard").classList.add("hidden");
+      },
+
+      resetCanvasCam() {
+        this.camera.x = 0;
+        this.camera.y = 0;
+      },
+
+      togglePause() {
+        this.isPaused = !this.isPaused;
+        const icon = document.getElementById("pauseIcon");
+        const txt = document.getElementById("pauseText");
+        if (this.isPaused) {
+          icon.className = "fa-solid fa-play text-emerald-400";
+          txt.textContent = "繼續";
+        } else {
+          icon.className = "fa-solid fa-pause text-amber-400";
+          txt.textContent = "暫停";
+        }
+      },
+
+      stepFrame() {
+        if (!this.isPaused) this.togglePause();
+        this.update(0.016);
+      },
+
+      /**
+       * ============================================================================
+       * 5. ATTACK & ULTIMATE MOVE EXECUTION
+       * ============================================================================
+       */
+      castSelectedSkill() {
+        const sk = SKILLS_DATA.find(s => s.id === this.selectedSkillId);
+        if (!sk) return;
+
+        let targetX = this.caster.x + 200;
+        let targetY = this.caster.y;
+        if (this.dummies.length > 0) {
+          let closest = null, closestDist = Infinity;
+          this.dummies.forEach(d => {
+            const dist = Math.hypot(d.x - this.caster.x, d.y - this.caster.y);
+            if (dist < closestDist) { closestDist = dist; closest = d; }
+          });
+          if (closest) {
+            targetX = closest.x;
+            targetY = closest.y;
+          }
+        }
+
+        const baseAngle = Math.atan2(targetY - this.caster.y, targetX - this.caster.x);
+        this.caster.facingX = Math.cos(baseAngle) >= 0 ? 1 : -1;
+
+        if (this.isSuperMove) {
+          this.executeSuperMove(sk, baseAngle);
+        } else {
+          this.executeNormalMove(sk, baseAngle);
+        }
+      },
+
+      executeNormalMove(sk, baseAngle) {
+        const lv = this.skillLevel;
+        const dmg = sk.baseDmg * (1 + (lv - 1) * 0.22);
+        const p = this.caster;
+
+        // 1. 水炮：正弦流體外廓 + 浪花冠 + 水滴飛濺
+        if (sk.id === "Hydro Pump") {
+          let pillarCount = lv >= 9 ? 4 : (lv >= 6 ? 3 : (lv >= 3 ? 2 : 1));
+          const pLen = 220 + lv * 14;
+          const pWidth = 32 + lv * 2.2;
+          for (let i = 0; i < pillarCount; i++) {
+            const ang = baseAngle + (pillarCount === 1 ? 0 : (i - (pillarCount - 1) / 2) * 0.26);
+            this.meleeEffects.push({
+              x: p.x, y: p.y, angle: ang, length: pLen, width: pWidth,
+              timer: 0.50, maxTime: 0.50, tickTimer: 0, tickInterval: 0.12,
+              dmgPerTick: dmg * 0.32, skillId: "directional_hydro_pillar", firstHitSet: new Set()
+            });
+
+            const endX = p.x + Math.cos(ang) * pLen;
+            const endY = p.y + Math.sin(ang) * pLen;
+            for (let sp = 0; sp < 12; sp++) {
+              const spAng = ang + (Math.random() - 0.5) * 0.8;
+              this.particles.push({
+                x: endX, y: endY,
+                vx: Math.cos(spAng) * (90 + Math.random() * 110),
+                vy: Math.sin(spAng) * (90 + Math.random() * 110),
+                color: sp % 2 === 0 ? "#E0F2FE" : "#38BDF8",
+                shape: "circle", size: 3.5 + Math.random() * 3, life: 0.38
+              });
+            }
+          }
+          this.triggerScreenShake(0.15, 2.5);
+          return;
+        }
+
+        // 2. 暗影球普攻：自轉黑洞核 + 暗靈螺旋粒子
+        if (sk.id === "Shadow Ball") {
+          const sc = Math.min(3, 1 + (lv >= 5 ? 1 : 0) + (lv >= 8 ? 1 : 0));
+          for (let i = 0; i < sc; i++) {
+            const ang = baseAngle + (i - (sc - 1) / 2) * 0.26;
+            this.projectiles.push({
+              x: p.x, y: p.y, vx: Math.cos(ang) * 360, vy: Math.sin(ang) * 360,
+              radius: 18 + lv * 1.5, dmg, type: "Ghost", skillId: "Shadow Ball",
+              vfx: "Shadow Ball", color: "#A855F7", life: 1.25, pierce: lv >= 6 ? 3 : 1, hitSet: new Set()
+            });
+          }
+          return;
+        }
+
+        // 3. 超夢普攻：空間次元斬 + 鏡面折射菱片
+        if (sk.id === "Legendary_Mewtwo") {
+          [-0.22, 0.22].forEach(off => {
+            const ang = baseAngle + off;
+            this.projectiles.push({
+              x: p.x, y: p.y, vx: Math.cos(ang) * 420, vy: Math.sin(ang) * 420,
+              radius: 26, dmg: dmg * 0.7, type: "Psychic", skillId: "Mewtwo_Blade",
+              vfx: "mewtwo_blade", color: "#C084FC", life: 0.85, pierce: 5, hitSet: new Set()
+            });
+
+            // 隨機在兩側生成鏡面碎塊
+            for (let k = 0; k < 3; k++) {
+              const shardDist = 60 + Math.random() * 140;
+              const side = (k % 2 === 0 ? 1 : -1) * 22;
+              const sx = p.x + Math.cos(ang) * shardDist - Math.sin(ang) * side;
+              const sy = p.y + Math.sin(ang) * shardDist + Math.cos(ang) * side;
+              this.mirrorShards.push({
+                x: sx, y: sy, angle: Math.random() * Math.PI, size: 7 + Math.random() * 6,
+                timer: 0.28, maxTime: 0.28
+              });
+            }
+          });
+          this.triggerScreenShake(0.14, 3);
+          return;
+        }
+
+        // 4. 藤鞭：倒刺三角 + 芽苞圓點 + 末端音爆氣環 + 散射飛葉
+        if (sk.id === "Vine Whip") {
+          const whipCount = 1 + (lv >= 5 ? 1 : 0);
+          const reach = 160 + lv * 10;
+          for (let w = 0; w < whipCount; w++) {
+            const spread = (w - (whipCount - 1) / 2) * 0.35;
+            const ang = baseAngle + spread;
+            this.meleeEffects.push({
+              x: p.x, y: p.y, angle: ang, reach: reach,
+              timer: 0.42, maxTime: 0.42, skillId: "vine_whip"
+            });
+            this.checkMeleeDamage(p.x, p.y, ang, reach, 0.6, dmg, sk.type);
+
+            for (let lf = -1; lf <= 1; lf++) {
+              const leafAng = ang + lf * 0.25;
+              const tipX = p.x + Math.cos(ang) * reach;
+              const tipY = p.y + Math.sin(ang) * reach;
+              this.particles.push({
+                x: tipX, y: tipY,
+                vx: Math.cos(leafAng) * (70 + Math.random() * 40),
+                vy: Math.sin(leafAng) * (70 + Math.random() * 40),
+                color: lf === 0 ? "#15803D" : "#4ADE80",
+                shape: "petal", size: 4 + Math.random() * 3, life: 0.38
+              });
+            }
+          }
+          return;
+        }
+
+        // 5. 地震：半徑收斂至 115+lv*6，內外圈層次化
+        if (sk.id === "Earthquake") {
+          const fissureCount = 6 + Math.floor(lv * 0.6);
+          const fissureLength = 115 + lv * 6;
+          const innerCoreRadius = fissureLength * 0.55;
+
+          this.meleeEffects.push({
+            x: p.x, y: p.y, radius: fissureLength, innerRadius: innerCoreRadius,
+            timer: 0.52, maxTime: 0.52, skillId: "Earthquake",
+            branches: Array.from({ length: fissureCount }).map((_, idx) => ({
+              ang: (idx * Math.PI * 2) / fissureCount + (Math.random() - 0.5) * 0.22,
+              length: fissureLength * (0.8 + Math.random() * 0.3),
+              subCracks: [0.35, 0.65].map(ratio => ({
+                dist: ratio, angleOff: (Math.random() < 0.5 ? 1 : -1) * (0.4 + Math.random() * 0.25), len: fissureLength * 0.26
+              }))
+            }))
+          });
+
+          for (let i = 0; i < 14; i++) {
+            const a = Math.random() * Math.PI * 2;
+            this.particles.push({
+              x: p.x + (Math.random() - 0.5) * 16, y: p.y + (Math.random() - 0.5) * 16,
+              vx: Math.cos(a) * (50 + Math.random() * 90), vy: Math.sin(a) * (50 + Math.random() * 90) - 45,
+              color: i % 2 === 0 ? "#b45309" : "#d97706", shape: "rock", size: 4.5 + Math.random() * 4, life: 0.45
+            });
+          }
+
+          this.triggerScreenShake(0.22, 3.5);
+          this.dummies.forEach(d => {
+            const dist = Math.hypot(d.x - p.x, d.y - p.y);
+            if (dist <= innerCoreRadius + d.radius) {
+              this.applyDamageToDummy(d, dmg, sk.type, 0.4);
+              const kbAng = Math.atan2(d.y - p.y, d.x - p.x);
+              d.x += Math.cos(kbAng) * 45; d.y += Math.sin(kbAng) * 45;
+            } else if (dist <= fissureLength + d.radius) {
+              this.applyDamageToDummy(d, dmg * 0.6, sk.type, 0.2);
+              d.statuses["HydroDrag"] = 1.0;
+            }
+          });
+          return;
+        }
+
+        // 6. 十萬伏特：200px 射程 + 70px 靜電圈徹底根除盲點
+        if (sk.id === "Thunderbolt") {
+          const maxRange = 200;
+          const staticAuraRadius = 70;
+
+          this.meleeEffects.push({
+            x: p.x, y: p.y, radius: staticAuraRadius,
+            timer: 0.32, maxTime: 0.32, skillId: "static_aura", color: "#FACC15"
+          });
+
+          for (let step = 0; step < 3; step++) {
+            setTimeout(() => {
+              if (this.isPaused) return;
+              this.dummies.forEach(d => {
+                if (Math.hypot(d.x - p.x, d.y - p.y) <= staticAuraRadius + d.radius) {
+                  this.applyDamageToDummy(d, dmg * 0.35, "Electric", 0.5);
+                  this.applyStatusToSingleDummy(d, "Paralysis");
+                }
+              });
+
+              for (let i = -1; i <= 1; i++) {
+                const ang = baseAngle + i * 0.22 + (Math.random() - 0.5) * 0.1;
+                const targetX = p.x + Math.cos(ang) * maxRange;
+                const targetY = p.y + Math.sin(ang) * maxRange;
+                this.createLightningArc(p.x, p.y, targetX, targetY, step === 2 ? "#FFFFFF" : "#FACC15");
+                this.dummies.forEach(d => {
+                  if (Math.hypot(d.x - targetX, d.y - targetY) <= 50 + d.radius) {
+                    this.applyDamageToDummy(d, dmg * 0.35, "Electric", 0.4);
+                  }
+                });
+              }
+              this.triggerScreenShake(0.08, 2);
+            }, step * 85);
+          }
+          return;
+        }
+
+        // 7. 噴射火焰：滾動淚滴火舌 + 三層色溫漸變 + 飄升火星
+        if (sk.id === "Flamethrower") {
+          const flameCount = 1 + (lv >= 4 ? 1 : 0) + (lv >= 7 ? 1 : 0);
+          for (let i = 0; i < flameCount; i++) {
+            const spread = (i - (flameCount - 1) / 2) * 0.18;
+            const ang = baseAngle + spread;
+            this.projectiles.push({
+              x: p.x, y: p.y, vx: Math.cos(ang) * 360, vy: Math.sin(ang) * 360,
+              radius: 22 + lv * 1.4, dmg: dmg, type: "Fire", skillId: "Flamethrower",
+              vfx: "Flamethrower", color: "#F97316", life: 0.95, pierce: 5 + lv, hitSet: new Set()
+            });
+          }
+          this.triggerScreenShake(0.12, 2);
+          return;
+        }
+
+        // 8. 劈開：後方追加 2 道延遲漸隱動態弧線
+        if (sk.id === "Slash") {
+          const reach = 135 + lv * 8;
+          this.meleeEffects.push({
+            x: p.x, y: p.y, angle: baseAngle, radius: reach,
+            timer: 0.36, maxTime: 0.36, color: "#38BDF8", skillId: "Slash",
+            cracks: [{ offset: -16, len: reach * 0.9 }, { offset: 0, len: reach * 1.05 }, { offset: 16, len: reach * 0.9 }]
+          });
+          for (let sp = 0; sp < 10; sp++) {
+            const spAng = baseAngle + (Math.random() - 0.5) * 0.7;
+            this.particles.push({
+              x: p.x + Math.cos(baseAngle) * (reach * 0.75),
+              y: p.y + Math.sin(baseAngle) * (reach * 0.75),
+              vx: Math.cos(spAng) * (80 + Math.random() * 90),
+              vy: Math.sin(spAng) * (80 + Math.random() * 90),
+              color: sp % 2 === 0 ? "#FEF08A" : "#FFFFFF", size: 2.5 + Math.random() * 2, life: 0.22
+            });
+          }
+          this.checkMeleeDamage(p.x, p.y, baseAngle, reach, 0.55, dmg * 1.25, sk.type, 0.35);
+          this.triggerScreenShake(0.12, 2.5);
+          return;
+        }
+
+        // 9. 抓：三段階梯交錯撕裂爪
+        if (sk.id === "Scratch") {
+          const reach = 115 + lv * 6;
+          [
+            { delay: 0, ang: baseAngle - 0.28, fin: false },
+            { delay: 80, ang: baseAngle + 0.28, fin: false },
+            { delay: 160, ang: baseAngle, fin: true }
+          ].forEach(st => {
+            setTimeout(() => {
+              if (this.isPaused) return;
+              this.meleeEffects.push({
+                x: p.x, y: p.y, angle: st.ang, reach: reach,
+                timer: 0.28, maxTime: 0.28, skillId: "Scratch", isFinisher: st.fin
+              });
+              this.checkMeleeDamage(p.x, p.y, st.ang, reach, 0.65, dmg * (st.fin ? 0.45 : 0.3), sk.type);
+            }, st.delay);
+          });
+          return;
+        }
+
+        // 10. 種子炸彈：拋物線正弦位移高拋堅果橡子
+        if (sk.id === "Seed Bomb") {
+          const bombCount = 1 + (lv >= 5 ? 1 : 0) + (lv >= 8 ? 1 : 0);
+          for (let i = 0; i < bombCount; i++) {
+            const spread = (i - (bombCount - 1) / 2) * 0.22;
+            const ang = baseAngle + spread;
+            const targetDist = 180 + Math.random() * 60;
+            this.projectiles.push({
+              x: p.x, y: p.y, startX: p.x, startY: p.y,
+              targetX: p.x + Math.cos(ang) * targetDist, targetY: p.y + Math.sin(ang) * targetDist,
+              progress: 0, arcHeight: 65, radius: 14 + lv,
+              dmg, type: "Grass", skillId: "seed_nut", vfx: "seed_nut",
+              color: "#65A30D", life: 0.65, maxLife: 0.65, hitSet: new Set()
+            });
+          }
+          return;
+        }
+
+        // 11. 急凍光線：筆直穿透六角射線冰柱束
+        if (sk.id === "Ice Beam") {
+          const beamCount = 1 + (lv >= 4 ? 1 : 0) + (lv >= 7 ? 1 : 0);
+          for (let i = 0; i < beamCount; i++) {
+            const spread = (i - (beamCount - 1) / 2) * 0.16;
+            const ang = baseAngle + spread;
+            this.projectiles.push({
+              x: p.x, y: p.y, vx: Math.cos(ang) * 440, vy: Math.sin(ang) * 440,
+              radius: 17, dmg, type: "Ice", skillId: sk.id,
+              vfx: "ice_beam", color: sk.color, life: 1.1, pierce: 3, hitSet: new Set()
+            });
+          }
+          return;
+        }
+
+        // 12. 閃電鳥普攻：雷羽刺地 + 羽毛間連鎖跳躍電弧
+        if (sk.id === "Legendary_Zapdos") {
+          const featherPositions = [];
+          for (let f = -2; f <= 2; f++) {
+            const ang = baseAngle + f * 0.16;
+            const dist = 190 + Math.random() * 40;
+            const targetX = p.x + Math.cos(ang) * dist;
+            const targetY = p.y + Math.sin(ang) * dist;
+            featherPositions.push({ x: targetX, y: targetY });
+
+            this.projectiles.push({
+              x: p.x, y: p.y, vx: Math.cos(ang) * 440, vy: Math.sin(ang) * 440,
+              radius: 16, dmg: dmg * 0.45, type: "Electric", skillId: "Zapdos_Feather",
+              vfx: "thunder_feather", color: "#FACC15", life: 0.55, pierce: 2, hitSet: new Set()
+            });
+          }
+
+          setTimeout(() => {
+            if (this.isPaused) return;
+            for (let i = 0; i < featherPositions.length - 1; i++) {
+              this.createLightningArc(featherPositions[i].x, featherPositions[i].y, featherPositions[i+1].x, featherPositions[i+1].y, "#FDE047");
+            }
+            this.dummies.forEach(d => {
+              featherPositions.forEach(fp => {
+                if (Math.hypot(d.x - fp.x, d.y - fp.y) <= 45 + d.radius) {
+                  this.applyDamageToDummy(d, dmg * 0.35, "Electric", 0.6);
+                  this.applyStatusToSingleDummy(d, "Paralysis");
+                }
+              });
+            });
+          }, 420);
+
+          this.triggerScreenShake(0.14, 3);
+          return;
+        }
+
+        // 13. 急凍鳥普攻：冰風末端碎裂菱形冰晶
+        if (sk.id === "Legendary_Articuno") {
+          for (let w = -1; w <= 1; w += 2) {
+            const ang = baseAngle + w * 0.14;
+            this.projectiles.push({
+              x: p.x, y: p.y, vx: Math.cos(ang) * 370, vy: Math.sin(ang) * 370,
+              radius: 22, dmg: dmg * 0.65, type: "Ice", skillId: "Articuno_Tornado",
+              vfx: "ice_tornado", color: "#38BDF8", life: 0.75, pierce: 4, hitSet: new Set()
+            });
+          }
+          this.triggerScreenShake(0.12, 2.5);
+          return;
+        }
+
+        // 14. 火焰鳥普攻：前帶風刃後拖火苗的 90° 熱風
+        if (sk.id === "Legendary_Moltres") {
+          this.meleeEffects.push({
+            x: p.x, y: p.y, angle: baseAngle, radius: 210 + lv * 12,
+            timer: 0.45, maxTime: 0.45, skillId: "Moltres_Heatwave", color: "#F97316"
+          });
+          this.checkMeleeDamage(p.x, p.y, baseAngle, 210 + lv * 12, 0.78, dmg, "Fire", 0.2);
+          this.triggerScreenShake(0.16, 3.5);
+          return;
+        }
+
+        // 15. 夢幻普攻：彩虹基因光泡
+        if (sk.id === "Legendary_Mew") {
+          const colors = ["#EF4444", "#38BDF8", "#22C55E", "#FACC15", "#EC4899"];
+          const types = ["Fire", "Water", "Grass", "Electric", "Psychic"];
+          for (let m = 0; m < 3; m++) {
+            const pickIdx = Math.floor(Math.random() * colors.length);
+            const ang = baseAngle + (m - 1) * 0.18;
+            this.projectiles.push({
+              x: p.x, y: p.y, vx: Math.cos(ang) * 380, vy: Math.sin(ang) * 380,
+              radius: 18, dmg: dmg * 0.5, type: types[pickIdx], skillId: "Mew_Sphere",
+              vfx: "mew_sphere", color: colors[pickIdx], life: 1.0, pierce: 2, hitSet: new Set()
+            });
+          }
+          this.triggerScreenShake(0.1, 2);
+          return;
+        }
+
+        // 16. 空手劈普攻
+        if (sk.id === "Karate Chop") {
+          let fistCount = lv >= 8 ? 8 : (lv >= 5 ? 5 : 3);
+          const spinDir = Math.random() < 0.5 ? 1 : -1;
+          for (let f = 0; f < fistCount; f++) {
+            const ang = baseAngle + (f - (fistCount - 1) / 2) * 0.24;
+            this.projectiles.push({
+              x: p.x, y: p.y, vx: Math.cos(ang) * 270, vy: Math.sin(ang) * 270,
+              angle: ang, spinSpeed: spinDir * 2.5, radius: 26 + lv * 1.2,
+              dmg: dmg * 0.65, type: sk.type, skillId: "Karate Chop", vfx: "fist",
+              color: "#EF4444", life: 0.65, maxLife: 0.65, pierce: 3, hitSet: new Set()
+            });
+          }
+          this.triggerScreenShake(0.15, 3);
+          return;
+        }
+      },
+
+      executeSuperMove(sk, baseAngle) {
+        const ultDmg = sk.baseDmg * 4.4;
+        const p = this.caster;
+
+        // 1. 水炮超武：八方水柱
+        if (sk.id === "Hydro Pump") {
+          this.meleeEffects.push({
+            x: p.x, y: p.y, pillarsCount: 8, length: 380, width: 48,
+            timer: 0.75, maxTime: 0.75, tickTimer: 0, tickInterval: 0.12,
+            dmgPerTick: ultDmg * 0.35, skillId: "eight_hydro_pillars", firstHitSet: new Set()
+          });
+          this.triggerScreenShake(0.35, 6);
+          return;
+        }
+
+        // 2. 閃電鳥超武：動態非直線閃爍電弧網
+        if (sk.id === "Legendary_Zapdos") {
+          this.ultimateEffects.push({
+            x: p.x, y: p.y, radius: 45,
+            timer: 0.35, maxTime: 0.35,
+            skillId: "zapdos_charged_core", ultDmg: 0
+          });
+
+          setTimeout(() => {
+            if (this.isPaused) return;
+            const pillars = 6;
+            const hitPts = [];
+            for (let i = 0; i < pillars; i++) {
+              const a = (i * Math.PI * 2) / pillars;
+              const r = 240;
+              const tx = p.x + Math.cos(a) * r;
+              const ty = p.y + Math.sin(a) * r;
+              hitPts.push({ x: tx, y: ty });
+              this.createLightningArc(tx, ty - 320, tx, ty, "#FFFFFF");
+              this.createLightningArc(tx, ty - 320, tx, ty, "#FACC15");
+            }
+
+            this.ultimateEffects.push({
+              x: p.x, y: p.y, hitPts: hitPts, radius: 260,
+              timer: 1.25, maxTime: 1.25,
+              skillId: "zapdos_storm_web", ultDmg: ultDmg
+            });
+            this.triggerScreenShake(0.38, 8.5);
+
+            this.dummies.forEach(d => {
+              this.applyDamageToDummy(d, ultDmg, "Electric", 1.0);
+              this.applyStatusToSingleDummy(d, "Paralysis");
+            });
+          }, 240);
+          return;
+        }
+
+        // 3. 噴射火焰超武：定距鋪設焦土地火（性能優化版）
+        if (sk.id === "Flamethrower") {
+          this.ultimateEffects.push({
+            x: p.x, y: p.y, lastSpawnX: p.x, lastSpawnY: p.y,
+            vx: Math.cos(baseAngle) * 280, vy: Math.sin(baseAngle) * 280,
+            angle: baseAngle, radius: 80, timer: 1.4, maxTime: 1.4,
+            skillId: "drifting_daimonji", ultDmg: ultDmg
+          });
+          this.triggerScreenShake(0.35, 7);
+          return;
+        }
+
+        // 4. 抓超武修復：多段階梯高速交錯撕裂爪
+        if (sk.id === "Scratch") {
+          const reach = 220;
+          for (let i = 0; i < 4; i++) {
+            setTimeout(() => {
+              if (this.isPaused) return;
+              const ang = baseAngle + (i - 1.5) * 0.35;
+              this.meleeEffects.push({
+                x: p.x, y: p.y, angle: ang, reach: reach,
+                timer: 0.35, maxTime: 0.35, skillId: "Scratch", isFinisher: i === 3
+              });
+              this.checkMeleeDamage(p.x, p.y, ang, reach, 0.75, ultDmg * 0.32, "Normal");
+            }, i * 65);
+          }
+          this.triggerScreenShake(0.3, 6);
+          return;
+        }
+
+        // 5. 劈開超武修復：160° 雙層居合風暴
+        if (sk.id === "Slash") {
+          const reach = 280;
+          for (let i = 0; i < 3; i++) {
+            const ang = baseAngle + (i - 1) * 0.42;
+            this.meleeEffects.push({
+              x: p.x, y: p.y, angle: ang, radius: reach,
+              timer: 0.45, maxTime: 0.45, color: "#38BDF8", skillId: "Slash",
+              cracks: [{ offset: -22, len: reach * 0.95 }, { offset: 0, len: reach * 1.1 }, { offset: 22, len: reach * 0.95 }]
+            });
+          }
+          this.triggerScreenShake(0.2, 5);
+          this.dummies.forEach(d => {
+            if (Math.hypot(d.x - p.x, d.y - p.y) <= reach + d.radius) {
+              this.applyDamageToDummy(d, ultDmg, "Normal", 0.8, 0.4);
+            }
+          });
+          return;
+        }
+
+        // 6. 種子炸彈超武修復：漫天堅果雨
+        if (sk.id === "Seed Bomb") {
+          for (let i = 0; i < 10; i++) {
+            const a = (i * Math.PI * 2) / 10;
+            const dist = 180 + Math.random() * 120;
+            this.projectiles.push({
+              x: p.x, y: p.y, startX: p.x, startY: p.y,
+              targetX: p.x + Math.cos(a) * dist, targetY: p.y + Math.sin(a) * dist,
+              progress: 0, arcHeight: 90, radius: 20,
+              dmg: ultDmg * 0.45, type: "Grass", skillId: "seed_nut", vfx: "seed_nut",
+              color: "#65A30D", life: 0.75, maxLife: 0.75, hitSet: new Set()
+            });
+          }
+          this.triggerScreenShake(0.3, 6);
+          return;
+        }
+
+        // 7. 急凍光線超武修復：絕對零度暴風雪
+        if (sk.id === "Ice Beam") {
+          this.ultimateEffects.push({
+            x: p.x, y: p.y, angle: baseAngle, radius: 340,
+            timer: 1.3, maxTime: 1.3,
+            skillId: "absolute_zero_blizzard", ultDmg: ultDmg
+          });
+          this.triggerScreenShake(0.3, 6);
+          this.dummies.forEach(d => {
+            if (Math.hypot(d.x - p.x, d.y - p.y) <= 340 + d.radius) {
+              this.applyDamageToDummy(d, ultDmg, "Ice", 0.95);
+              this.applyStatusToSingleDummy(d, "Freeze");
+            }
+          });
+          return;
+        }
+
+        // 8. 暗影球超武：二段式漸進放大黑洞（前段 15px 奇點，中後段平滑膨脹至 155px）
+        if (sk.id === "Shadow Ball") {
+          this.ultimateEffects.push({
+            x: p.x + Math.cos(baseAngle) * 25, y: p.y + Math.sin(baseAngle) * 25,
+            startX: p.x, startY: p.y,
+            vx: Math.cos(baseAngle) * 95, vy: Math.sin(baseAngle) * 95,
+            baseRadius: 15, maxRadius: 155, timer: 2.2, maxTime: 2.2,
+            ultDmg: ultDmg, skillId: "drifting_shadow_blackhole"
+          });
+          this.triggerScreenShake(0.22, 4);
+          return;
+        }
+
+        // 9. 火焰鳥超武：火鳥衝刺 + 定距鋪設地火（性能優化版）
+        if (sk.id === "Legendary_Moltres") {
+          this.ultimateEffects.push({
+            x: p.x, y: p.y, lastSpawnX: p.x, lastSpawnY: p.y,
+            vx: Math.cos(baseAngle) * 360, vy: Math.sin(baseAngle) * 360,
+            angle: baseAngle, timer: 1.4, maxTime: 1.4,
+            skillId: "moltres_phoenix_rush", ultDmg: ultDmg
+          });
+          this.triggerScreenShake(0.35, 7.5);
+          return;
+        }
+
+        // 10. 急凍鳥超武：三色極光帷幕
+        if (sk.id === "Legendary_Articuno") {
+          this.ultimateEffects.push({
+            x: p.x, y: p.y, radius: 360,
+            timer: 1.6, maxTime: 1.6,
+            skillId: "articuno_sheer_cold", ultDmg: ultDmg
+          });
+          this.triggerScreenShake(0.35, 7);
+          this.dummies.forEach(d => {
+            this.applyDamageToDummy(d, ultDmg, "Ice", 1.0);
+            this.applyStatusToSingleDummy(d, "Freeze");
+          });
+          return;
+        }
+
+        // 11. 超夢超武：純黑奇點 ➔ 8 向切割激光
+        if (sk.id === "Legendary_Mewtwo") {
+          this.ultimateEffects.push({
+            x: p.x, y: p.y, radius: 360,
+            timer: 1.5, maxTime: 1.5,
+            skillId: "mewtwo_oblivion", ultDmg: ultDmg
+          });
+          this.triggerScreenShake(0.4, 8.5);
+          this.dummies.forEach(d => {
+            d.levitateOffset = 48;
+            this.applyDamageToDummy(d, ultDmg, "Psychic", 1.0);
+            this.applyStatusToSingleDummy(d, "Confusion");
+          });
+          return;
+        }
+
+        // 12. 夢幻超武：五彩流星雨
+        if (sk.id === "Legendary_Mew") {
+          this.ultimateEffects.push({
+            x: p.x, y: p.y, radius: 380,
+            timer: 1.7, maxTime: 1.7,
+            skillId: "mew_supernova", ultDmg: ultDmg
+          });
+          this.triggerScreenShake(0.35, 7);
+          const stPool = ["Burn", "Freeze", "Paralysis", "Poison", "Confusion"];
+          this.dummies.forEach(d => {
+            this.applyDamageToDummy(d, ultDmg, "Psychic", 1.0);
+            const randSt = stPool[Math.floor(Math.random() * stPool.length)];
+            this.applyStatusToSingleDummy(d, randSt);
+          });
+          return;
+        }
+
+        // 13. 空手劈超武：百裂拳
+        if (sk.id === "Karate Chop") {
+          this.meleeEffects.push({
+            x: p.x, y: p.y, radius: 180, timer: 0.45, maxTime: 0.45,
+            skillId: "martial_shockwave", color: "#DC2626"
+          });
+          for (let f = 0; f < 18; f++) {
+            const ang = (f * Math.PI * 2) / 18;
+            this.projectiles.push({
+              x: p.x, y: p.y, vx: Math.cos(ang) * 320, vy: Math.sin(ang) * 320,
+              angle: ang, radius: 34, dmg: ultDmg * 0.65, type: "Fighting", skillId: "Karate Chop",
+              vfx: "fist", color: "#EF4444", life: 0.75, pierce: 8, hitSet: new Set()
+            });
+          }
+          this.triggerScreenShake(0.35, 7);
+          return;
+        }
+
+        // 14. 地震超武：全屏崩石暴起
+        if (sk.id === "Earthquake") {
+          const fissureLength = 360;
+          this.meleeEffects.push({
+            x: p.x, y: p.y, radius: fissureLength, timer: 0.75, maxTime: 0.75, skillId: "Earthquake",
+            branches: Array.from({ length: 12 }).map((_, idx) => ({
+              ang: (idx * Math.PI * 2) / 12 + (Math.random() - 0.5) * 0.25,
+              length: fissureLength * (0.85 + Math.random() * 0.3),
+              subCracks: [0.3, 0.65].map(ratio => ({
+                dist: ratio, angleOff: (Math.random() < 0.5 ? 1 : -1) * (0.45 + Math.random() * 0.25), len: fissureLength * 0.32
+              }))
+            }))
+          });
+          for (let i = 0; i < 36; i++) {
+            const a = Math.random() * Math.PI * 2;
+            this.particles.push({
+              x: p.x, y: p.y,
+              vx: Math.cos(a) * (80 + Math.random() * 180), vy: Math.sin(a) * (80 + Math.random() * 180) - 65,
+              color: i % 2 === 0 ? "#b45309" : "#d97706", shape: "rock", size: 6 + Math.random() * 6, life: 0.65
+            });
+          }
+          this.triggerScreenShake(0.35, 8);
+          this.dummies.forEach(d => {
+            if (Math.hypot(d.x - p.x, d.y - p.y) <= fissureLength + d.radius) {
+              this.applyDamageToDummy(d, ultDmg, "Ground", 0.9);
+            }
+          });
+          return;
+        }
+
+        // 15. 十萬伏特超武：階梯連鎖萬雷
+        if (sk.id === "Thunderbolt") {
+          for (let i = 0; i < 8; i++) {
+            const a = (i * Math.PI * 2) / 8;
+            this.createLightningArc(p.x, p.y, p.x + Math.cos(a) * 110, p.y + Math.sin(a) * 110, "#FEF08A");
+          }
+          setTimeout(() => {
+            if (this.isPaused) return;
+            for (let i = 0; i < 6; i++) {
+              const a = (i * Math.PI * 2) / 6 + 0.25;
+              this.createLightningArc(p.x, p.y, p.x + Math.cos(a) * 240, p.y + Math.sin(a) * 240, "#FACC15");
+            }
+          }, 180);
+          setTimeout(() => {
+            if (this.isPaused) return;
+            for (let i = 0; i < 14; i++) {
+              const a = (i * Math.PI * 2) / 14;
+              this.createLightningArc(p.x, p.y, p.x + Math.cos(a) * 360, p.y + Math.sin(a) * 360, "#FFFFFF");
+            }
+            this.triggerScreenShake(0.35, 9);
+            this.dummies.forEach(d => {
+              this.applyDamageToDummy(d, ultDmg * 0.7, "Electric", 1.0);
+              this.applyStatusToSingleDummy(d, "Paralysis");
+            });
+          }, 360);
+          return;
+        }
+
+        // 16. 藤鞭超武：森羅瘋狂植物
+        if (sk.id === "Vine Whip") {
+          for (let i = 0; i < 10; i++) {
+            this.meleeEffects.push({
+              x: p.x, y: p.y, angle: (i * Math.PI * 2) / 10, reach: 300,
+              timer: 0.75, maxTime: 0.75, skillId: "vine_whip"
+            });
+          }
+          this.triggerScreenShake(0.3, 5);
+          this.dummies.forEach(d => {
+            if (Math.hypot(d.x - p.x, d.y - p.y) <= 320 + d.radius) {
+              this.applyDamageToDummy(d, ultDmg, "Grass", 0.9);
+              this.applyStatusToSingleDummy(d, "Poison");
+            }
+          });
+          return;
+        }
+      },
+
+      triggerScreenShake(duration, magnitude) {
+        this.screenShake.timer = duration;
+        this.screenShake.magnitude = magnitude;
+      },
+
+      createLightningArc(x1, y1, x2, y2, color) {
+        const pts = [{ x: x1, y: y1 }];
+        const steps = 6;
+        for (let i = 1; i < steps; i++) {
+          const t = i / steps;
+          pts.push({
+            x: x1 + (x2 - x1) * t + (Math.random() - 0.5) * 36,
+            y: y1 + (y2 - y1) * t + (Math.random() - 0.5) * 36
+          });
+        }
+        pts.push({ x: x2, y: y2 });
+        this.lightningArcs.push({ pts, color, timer: 0.26 });
+      },
+
+      checkMeleeDamage(ox, oy, baseAngle, radius, spreadAngle, dmg, type, critBonus = 0) {
+        this.dummies.forEach(d => {
+          const dx = d.x - ox;
+          const dy = d.y - oy;
+          const dist = Math.hypot(dx, dy);
+          if (dist <= radius + d.radius) {
+            const angleToDummy = Math.atan2(dy, dx);
+            const diff = Math.abs(Math.atan2(Math.sin(angleToDummy - baseAngle), Math.cos(angleToDummy - baseAngle)));
+            if (diff <= spreadAngle || dist <= 40) {
+              this.applyDamageToDummy(d, dmg, type, 0.35, critBonus);
+            }
+          }
+        });
+      },
+
+      applyDamageToDummy(dummy, rawDmg, moveType, statusChance = 0.3, critBonus = 0) {
+        const mult = getTypeMultiplier(moveType, dummy.type1, dummy.type2);
+        const isCrit = Math.random() < (0.15 + critBonus);
+        const finalDmg = Math.round(rawDmg * mult * (isCrit ? 1.6 : 1.0));
+
+        if (!document.getElementById("chkImmortal").checked) {
+          dummy.hp -= finalDmg;
+        }
+
+        this.damageHistory.push({ time: performance.now(), amount: finalDmg });
+
+        let label = `${finalDmg}`;
+        let col = "#FFFFFF";
+        if (mult > 1.1) { label = `絕佳! ${finalDmg}`; col = "#F97316"; }
+        else if (mult < 0.9) { label = `微弱 ${finalDmg}`; col = "#94A3B8"; }
+        else if (isCrit) { label = `暴擊! ${finalDmg}`; col = "#FACC15"; }
+
+        this.floatingTexts.push({
+          x: dummy.x + (Math.random() - 0.5) * 20,
+          y: dummy.y - dummy.radius - 12 - (dummy.levitateOffset || 0),
+          text: label, color: col, life: 0.8
+        });
+
+        const typeStatus = TYPE_META[moveType] && TYPE_META[moveType].status;
+        if (typeStatus && Math.random() < statusChance) {
+          this.applyStatusToSingleDummy(dummy, typeStatus);
+        }
+
+        if (dummy.hp <= 0) {
+          if (document.getElementById("chkAutoRespawn").checked) {
+            dummy.hp = dummy.maxHp;
+            dummy.statuses = {};
+            this.spawnParticleBurst(dummy.x, dummy.y, "#10B981", 16);
+          } else {
+            const idx = this.dummies.indexOf(dummy);
+            if (idx !== -1) this.dummies.splice(idx, 1);
+          }
+        }
+
+        this.updateInspectorStats();
+      },
+
+      applyStatusToTargets(statusKey) {
+        if (this.dummies.length === 0) return;
+        this.dummies.forEach(d => this.applyStatusToSingleDummy(d, statusKey));
+        this.updateInspectorStats();
+      },
+
+      applyStatusToSingleDummy(dummy, statusKey) {
+        dummy.statuses[statusKey] = 5.0;
+        const labels = { Burn: "灼傷", Poison: "中毒", Paralysis: "麻痺", Freeze: "冰凍", Confusion: "混亂", HydroDrag: "水流減速" };
+        const colors = { Burn: "#F97316", Poison: "#A855F7", Paralysis: "#FACC15", Freeze: "#38BDF8", Confusion: "#F472B6", HydroDrag: "#0284C7" };
+        
+        this.floatingTexts.push({
+          x: dummy.x,
+          y: dummy.y - dummy.radius - 24 - (dummy.levitateOffset || 0),
+          text: `[${labels[statusKey] || statusKey}]`,
+          color: colors[statusKey] || "#FFF",
+          life: 0.9
+        });
+      },
+
+      applyAllStatusesTogether() {
+        ["Burn", "Poison", "Paralysis", "Freeze", "Confusion"].forEach(st => this.applyStatusToTargets(st));
+      },
+
+      cleanseAllStatuses() {
+        this.dummies.forEach(d => {
+          if (d.statuses.Freeze) {
+            for (let i = 0; i < 8; i++) {
+              const a = Math.random() * Math.PI * 2;
+              this.particles.push({
+                x: d.x, y: d.y,
+                vx: Math.cos(a) * (60 + Math.random() * 60), vy: Math.sin(a) * (60 + Math.random() * 60),
+                color: i % 2 === 0 ? "#E0F2FE" : "#38BDF8", shape: "rock", size: 4 + Math.random() * 3, life: 0.4
+              });
+            }
+          }
+          d.statuses = {};
+          this.spawnParticleBurst(d.x, d.y, "#34D399", 14);
+        });
+        this.updateInspectorStats();
+      },
+
+      spawnParticleBurst(x, y, color, count = 10) {
+        for (let i = 0; i < count; i++) {
+          const ang = Math.random() * Math.PI * 2;
+          const spd = 40 + Math.random() * 90;
+          this.particles.push({
+            x, y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
+            color, size: 3 + Math.random() * 3, life: 0.4 + Math.random() * 0.2
+          });
+        }
+      },
+
+      /**
+       * ============================================================================
+       * 6. MAIN UPDATE & RENDER LOOP
+       * ============================================================================
+       */
+      loop(timestamp) {
+        const rawDt = Math.min(0.05, (timestamp - this.lastTime) / 1000 || 0.016);
+        const dt = rawDt * this.timeScale;
+        this.lastTime = timestamp;
+
+        if (!this.isPaused) {
+          this.update(dt);
+        }
+        this.render();
+
+        this.frameCount++;
+        if (timestamp - this.lastFpsTime >= 1000) {
+          this.fps = Math.round((this.frameCount * 1000) / (timestamp - this.lastFpsTime));
+          this.frameCount = 0;
+          this.lastFpsTime = timestamp;
+          document.getElementById("statFps").textContent = this.fps;
+        }
+
+        requestAnimationFrame((t) => this.loop(t));
+      },
+
+      update(dt) {
+        if (this.isAutoFire) {
+          this.autoFireTimer += dt;
+          if (this.autoFireTimer >= this.autoFireInterval) {
+            this.autoFireTimer = 0;
+            this.castSelectedSkill();
+          }
+        }
+
+        if (this.screenShake.timer > 0) {
+          this.screenShake.timer -= dt;
+        }
+
+        const now = performance.now();
+        this.damageHistory = this.damageHistory.filter(h => now - h.time <= 2000);
+        const totalDmgInWindow = this.damageHistory.reduce((acc, h) => acc + h.amount, 0);
+        document.getElementById("statDps").textContent = Math.round(totalDmgInWindow / 2).toLocaleString();
+        document.getElementById("statParticles").textContent = this.particles.length;
+
+        // Ground Zones Update
+        for (let i = this.groundZones.length - 1; i >= 0; i--) {
+          const gz = this.groundZones[i];
+          gz.timer -= dt;
+          gz.tickTimer += dt;
+          if (gz.tickTimer >= gz.tickInterval) {
+            gz.tickTimer = 0;
+            this.dummies.forEach(d => {
+              if (Math.hypot(d.x - gz.x, d.y - gz.y) <= gz.radius + d.radius) {
+                this.applyDamageToDummy(d, gz.dmgPerTick, gz.type, 0.4);
+                this.applyStatusToSingleDummy(d, "Burn");
+              }
+            });
+          }
+          if (gz.timer <= 0) this.groundZones.splice(i, 1);
+        }
+
+        // Mirror Shards Update (超夢念刃碎塊)
+        for (let i = this.mirrorShards.length - 1; i >= 0; i--) {
+          const ms = this.mirrorShards[i];
+          ms.timer -= dt;
+          if (ms.timer <= 0) this.mirrorShards.splice(i, 1);
+        }
+
+        // Projectiles Update
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+          const p = this.projectiles[i];
+
+          // 種子炸彈正弦拋物線
+          if (p.vfx === "seed_nut") {
+            p.progress += dt / p.maxLife;
+            const t = Math.min(1, p.progress);
+            p.x = p.startX + (p.targetX - p.startX) * t;
+            p.y = p.startY + (p.targetY - p.startY) * t - Math.sin(t * Math.PI) * p.arcHeight;
+
+            if (t >= 1) {
+              for (let k = 0; k < 6; k++) {
+                const a = (k * Math.PI * 2) / 6;
+                this.particles.push({
+                  x: p.x, y: p.y,
+                  vx: Math.cos(a) * (70 + Math.random() * 50), vy: Math.sin(a) * (70 + Math.random() * 50) - 30,
+                  color: k % 2 === 0 ? "#78350F" : "#84CC16", shape: "rock", size: 4.5, life: 0.4
+                });
+              }
+              for (let s = 0; s < 12; s++) {
+                const a = Math.random() * Math.PI * 2;
+                this.particles.push({
+                  x: p.x, y: p.y,
+                  vx: Math.cos(a) * (20 + Math.random() * 60), vy: Math.sin(a) * (20 + Math.random() * 60),
+                  color: s % 2 === 0 ? "#4ADE80" : "#BEF264", size: 6, life: 0.5
+                });
+              }
+
+              this.dummies.forEach(d => {
+                if (Math.hypot(d.x - p.x, d.y - p.y) <= 75 + d.radius) {
+                  this.applyDamageToDummy(d, p.dmg, "Grass", 0.45);
+                  this.applyStatusToSingleDummy(d, "Poison");
+                }
+              });
+
+              this.projectiles.splice(i, 1);
+              continue;
+            }
+          } else {
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.life -= dt;
+
+            // 噴射火焰火星拋升
+            if (p.vfx === "Flamethrower" && Math.random() < 0.75) {
+              this.particles.push({
+                x: p.x + (Math.random() - 0.5) * 14, y: p.y + (Math.random() - 0.5) * 14,
+                vx: -p.vx * 0.12 + (Math.random() - 0.5) * 40, vy: -p.vy * 0.12 - (25 + Math.random() * 45),
+                color: Math.random() < 0.5 ? "#F97316" : "#FEF08A", size: 3 + Math.random() * 3, life: 0.32
+              });
+            }
+
+            // 暗影球螺旋黑洞尾氣與暗靈粒子
+            if (p.vfx === "Shadow Ball" && Math.random() < 0.8) {
+              this.particles.push({
+                x: p.x + (Math.random() - 0.5) * 10, y: p.y + (Math.random() - 0.5) * 10,
+                vx: -p.vx * 0.15 + (Math.random() - 0.5) * 20, vy: -p.vy * 0.15 + (Math.random() - 0.5) * 20,
+                color: Math.random() < 0.5 ? "#C084FC" : "#3B0764", shape: "star", size: 3.5, life: 0.3
+              });
+            }
+
+            // 急凍光線寒霜微粒
+            if (p.vfx === "ice_beam" && Math.random() < 0.7) {
+              this.particles.push({
+                x: p.x + (Math.random() - 0.5) * 8, y: p.y + (Math.random() - 0.5) * 8,
+                vx: (Math.random() - 0.5) * 20, vy: (Math.random() - 0.5) * 20,
+                color: Math.random() < 0.5 ? "#E0F2FE" : "#38BDF8", size: 3, life: 0.28
+              });
+            }
+
+            // 夢幻起源光彈尾跡
+            if (p.vfx === "mew_sphere" && Math.random() < 0.7) {
+              this.particles.push({
+                x: p.x, y: p.y, vx: (Math.random() - 0.5) * 20, vy: (Math.random() - 0.5) * 20,
+                color: Math.random() < 0.5 ? p.color : "#FFFFFF", shape: "star", size: 3, life: 0.25
+              });
+            }
+
+            for (const d of this.dummies) {
+              if (p.hitSet.has(d)) continue;
+              if (Math.hypot(d.x - p.x, d.y - p.y) <= p.radius + d.radius) {
+                p.hitSet.add(d);
+                this.applyDamageToDummy(d, p.dmg, p.type, 0.45);
+                this.spawnParticleBurst(p.x, p.y, p.color, 8);
+                p.pierce--;
+                if (p.pierce <= 0) break;
+              }
+            }
+
+            if (p.life <= 0 || p.pierce <= 0) {
+              this.projectiles.splice(i, 1);
+            }
+          }
+        }
+
+        // Melee Effects Update
+        for (let i = this.meleeEffects.length - 1; i >= 0; i--) {
+          const m = this.meleeEffects[i];
+          m.timer -= dt;
+
+          if (m.skillId === "directional_hydro_pillar" || m.skillId === "eight_hydro_pillars") {
+            m.tickTimer = (m.tickTimer || 0) + dt;
+            if (m.tickTimer >= (m.tickInterval || 0.12)) {
+              m.tickTimer = 0;
+              const isEight = m.skillId === "eight_hydro_pillars";
+              this.dummies.forEach(d => {
+                const dx = d.x - m.x;
+                const dy = d.y - m.y;
+                const dist = Math.hypot(dx, dy);
+                let inStream = false;
+                if (isEight) {
+                  inStream = dist <= m.length + d.radius;
+                } else if (dist <= m.length + d.radius) {
+                  const angleToD = Math.atan2(dy, dx);
+                  const diff = Math.abs(Math.atan2(Math.sin(angleToD - m.angle), Math.cos(angleToD - m.angle)));
+                  if (diff < 0.35 || dist < 45) inStream = true;
+                }
+
+                if (inStream) {
+                  this.applyDamageToDummy(d, m.dmgPerTick, "Water", 0);
+                  d.statuses["HydroDrag"] = 0.45;
+                  if (!m.firstHitSet.has(d)) {
+                    m.firstHitSet.add(d);
+                    const pushAng = isEight ? Math.atan2(dy, dx) : m.angle;
+                    d.x += Math.cos(pushAng) * 15;
+                    d.y += Math.sin(pushAng) * 15;
+                  }
+                }
+              });
+            }
+          }
+
+          if (m.timer <= 0) this.meleeEffects.splice(i, 1);
+        }
+
+        // Ultimate Effects Update
+        for (let i = this.ultimateEffects.length - 1; i >= 0; i--) {
+          const u = this.ultimateEffects[i];
+          u.timer -= dt;
+
+          // 大字爆炎推進 + 定距鋪設焦土地火（每 35px 鋪設一顆，性能優化版）
+          if (u.skillId === "drifting_daimonji") {
+            u.x += u.vx * dt;
+            u.y += u.vy * dt;
+
+            const distSinceLast = Math.hypot(u.x - u.lastSpawnX, u.y - u.lastSpawnY);
+            if (distSinceLast >= 35 && this.groundZones.length < 16) {
+              u.lastSpawnX = u.x;
+              u.lastSpawnY = u.y;
+              this.groundZones.push({
+                x: u.x, y: u.y, radius: 36, timer: 1.4, maxTime: 1.4,
+                tickTimer: 0, tickInterval: 0.3, dmgPerTick: u.ultDmg * 0.15, type: "Fire"
+              });
+            }
+
+            this.dummies.forEach(d => {
+              if (Math.hypot(d.x - u.x, d.y - u.y) <= u.radius + d.radius) {
+                this.applyDamageToDummy(d, u.ultDmg * 0.35, "Fire", 0.85);
+                this.applyStatusToSingleDummy(d, "Burn");
+              }
+            });
+          }
+
+          // 火焰鳥衝刺 + 定距鋪設地火（每 35px 鋪設一顆，性能優化版）
+          if (u.skillId === "moltres_phoenix_rush") {
+            u.x += u.vx * dt;
+            u.y += u.vy * dt;
+
+            const distSinceLast = Math.hypot(u.x - u.lastSpawnX, u.y - u.lastSpawnY);
+            if (distSinceLast >= 35 && this.groundZones.length < 16) {
+              u.lastSpawnX = u.x;
+              u.lastSpawnY = u.y;
+              this.groundZones.push({
+                x: u.x, y: u.y, radius: 42, timer: 1.5, maxTime: 1.5,
+                tickTimer: 0, tickInterval: 0.25, dmgPerTick: u.ultDmg * 0.18, type: "Fire"
+              });
+            }
+
+            this.dummies.forEach(d => {
+              if (Math.hypot(d.x - u.x, d.y - u.y) <= 85 + d.radius) {
+                this.applyDamageToDummy(d, u.ultDmg * 0.45, "Fire", 1.0);
+                this.applyStatusToSingleDummy(d, "Burn");
+              }
+            });
+          }
+
+          // 暗影球黑洞二段式漸進放大（前段 15px，中後段平滑膨脹至 155px）
+          if (u.skillId === "drifting_shadow_blackhole") {
+            u.x += u.vx * dt;
+            u.y += u.vy * dt;
+            const distTraveled = Math.hypot(u.x - u.startX, u.y - u.startY);
+
+            let curRadius = u.baseRadius;
+            if (distTraveled > 100) {
+              const expandProgress = Math.min(1, (distTraveled - 100) / 160);
+              const smoothT = expandProgress * expandProgress * (3 - 2 * expandProgress); // SmoothStep
+              curRadius = u.baseRadius + (u.maxRadius - u.baseRadius) * smoothT;
+            }
+
+            this.dummies.forEach(d => {
+              if (d.isBoss || d.radius > 34) return;
+              const dx = u.x - d.x;
+              const dy = u.y - d.y;
+              const dist = Math.hypot(dx, dy);
+              if (dist <= curRadius + 50 && dist > 15) {
+                const falloff = Math.max(0.1, 1 - (dist / (curRadius + 50)));
+                const pullPower = falloff * falloff * 240 * dt;
+                d.x += (dx / dist) * pullPower;
+                d.y += (dy / dist) * pullPower;
+              }
+            });
+
+            if (u.timer <= 0) {
+              this.spawnParticleBurst(u.x, u.y, "#C084FC", 30);
+              this.triggerScreenShake(0.3, 6);
+              this.dummies.forEach(d => {
+                if (Math.hypot(d.x - u.x, d.y - u.y) <= curRadius + d.radius) {
+                  this.applyDamageToDummy(d, u.ultDmg, "Ghost", 0.9);
+                  this.applyStatusToSingleDummy(d, "Confusion");
+                }
+              });
+            }
+          }
+
+          if (u.timer <= 0) this.ultimateEffects.splice(i, 1);
+        }
+
+        for (let i = this.lightningArcs.length - 1; i >= 0; i--) {
+          this.lightningArcs[i].timer -= dt;
+          if (this.lightningArcs[i].timer <= 0) this.lightningArcs.splice(i, 1);
+        }
+
+        for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
+          const ft = this.floatingTexts[i];
+          ft.y -= 25 * dt;
+          ft.life -= dt;
+          if (ft.life <= 0) this.floatingTexts.splice(i, 1);
+        }
+
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+          const pt = this.particles[i];
+          pt.x += pt.vx * dt;
+          pt.y += pt.vy * dt;
+          pt.life -= dt;
+          if (pt.life <= 0) this.particles.splice(i, 1);
+        }
+
+        // Dummies Update
+        const allowMove = document.getElementById("chkEnemyMove").checked;
+        this.dummies.forEach(d => {
+          if (d.levitateOffset > 0) {
+            d.levitateOffset = Math.max(0, d.levitateOffset - dt * 45);
+          }
+
+          for (const st in d.statuses) {
+            d.statuses[st] -= dt;
+            if (d.statuses[st] <= 0) delete d.statuses[st];
+          }
+
+          d.dotTickTimer -= dt;
+          if (d.dotTickTimer <= 0) {
+            d.dotTickTimer = 0.55;
+            if (d.statuses.Burn) {
+              const bDmg = Math.max(8, Math.round(d.maxHp * 0.02));
+              d.hp -= bDmg;
+              this.floatingTexts.push({ x: d.x, y: d.y - d.radius, text: `灼傷 -${bDmg}`, color: "#F97316", life: 0.6 });
+              this.spawnParticleBurst(d.x, d.y, "#F97316", 4);
+              d.x += (Math.random() - 0.5) * 6;
+            }
+            if (d.statuses.Poison) {
+              const pDmg = Math.max(12, Math.round(d.maxHp * 0.025));
+              d.hp -= pDmg;
+              this.floatingTexts.push({ x: d.x, y: d.y - d.radius, text: `中毒 -${pDmg}`, color: "#A855F7", life: 0.6 });
+              this.spawnParticleBurst(d.x, d.y, "#A855F7", 4);
+              d.levitateOffset = -3;
+            }
+          }
+
+          if (d.statuses.Paralysis) {
+            d.twitchTimer += dt;
+            if (d.twitchTimer > 0.3) {
+              d.twitchTimer = 0;
+              this.createLightningArc(d.x - 14, d.y - 14, d.x + 14, d.y + 14, "#FACC15");
+            }
+          }
+
+          if (allowMove && !d.statuses.Freeze) {
+            const dragMod = d.statuses["HydroDrag"] ? 0.55 : 1.0;
+            const isParalyzedStutter = d.statuses.Paralysis && Math.sin(now * 0.015) > 0.4;
+            const speedMod = (isParalyzedStutter ? 0.1 : (d.statuses.Paralysis ? 0.4 : 1.0)) * dragMod;
+            
+            if (d.statuses.Confusion) {
+              const confAngle = now * 0.003;
+              d.x -= Math.cos(confAngle) * 22 * dt * speedMod;
+              d.y += Math.sin(confAngle * 2) * 18 * dt * speedMod;
+            } else {
+              d.x += Math.cos(now * 0.002) * 20 * dt * speedMod;
+            }
+          }
+        });
+      },
+
+      render() {
+        const ctx = this.ctx;
+        ctx.clearRect(0, 0, this.width, this.height);
+
+        ctx.save();
+        if (this.screenShake.timer > 0) {
+          const mag = this.screenShake.magnitude;
+          ctx.translate((Math.random() - 0.5) * mag * 2, (Math.random() - 0.5) * mag * 2);
+        }
+
+        this.renderGrid(ctx);
+        this.renderGroundZones(ctx);
+        this.renderUltimateEffects(ctx);
+        this.renderMeleeEffects(ctx);
+        this.renderMirrorShards(ctx);
+        this.renderDummies(ctx);
+        this.renderCaster(ctx);
+        this.renderProjectiles(ctx);
+        this.renderLightning(ctx);
+        this.renderParticles(ctx);
+        this.renderFloatingTexts(ctx);
+
+        ctx.restore();
+      },
+
+      renderGrid(ctx) {
+        const gridSize = 40;
+        const ox = (-this.camera.x + this.width / 2) % gridSize;
+        const oy = (-this.camera.y + this.height / 2) % gridSize;
+
+        ctx.strokeStyle = "rgba(51, 65, 85, 0.25)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let x = ox; x < this.width; x += gridSize) {
+          ctx.moveTo(x, 0); ctx.lineTo(x, this.height);
+        }
+        for (let y = oy; y < this.height; y += gridSize) {
+          ctx.moveTo(0, y); ctx.lineTo(this.width, y);
+        }
+        ctx.stroke();
+      },
+
+      renderGroundZones(ctx) {
+        this.groundZones.forEach(gz => {
+          const pos = this.worldToScreen(gz.x, gz.y);
+          ctx.save();
+          ctx.translate(pos.x, pos.y);
+          ctx.globalAlpha = Math.max(0, gz.timer / gz.maxTime);
+
+          ctx.fillStyle = "rgba(185, 28, 28, 0.4)";
+          ctx.beginPath();
+          ctx.arc(0, 0, gz.radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = "#F97316";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.fillStyle = "#FEF08A";
+          ctx.beginPath();
+          ctx.arc(0, 0, gz.radius * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+      },
+
+      renderMirrorShards(ctx) {
+        this.mirrorShards.forEach(ms => {
+          const pos = this.worldToScreen(ms.x, ms.y);
+          ctx.save();
+          ctx.translate(pos.x, pos.y);
+          ctx.rotate(ms.angle);
+          ctx.globalAlpha = Math.max(0, ms.timer / ms.maxTime);
+
+          // 空間鏡面折射菱片
+          ctx.fillStyle = "rgba(192, 132, 252, 0.4)";
+          ctx.strokeStyle = "#FFFFFF";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(0, -ms.size);
+          ctx.lineTo(ms.size * 0.6, 0);
+          ctx.lineTo(0, ms.size);
+          ctx.lineTo(-ms.size * 0.6, 0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        });
+      },
+
+      renderCaster(ctx) {
+        const pos = this.worldToScreen(this.caster.x, this.caster.y);
+        ctx.save();
+        ctx.translate(pos.x, pos.y);
+
+        ctx.fillStyle = "rgba(0,0,0,0.45)";
+        ctx.beginPath();
+        ctx.ellipse(0, 16, 16, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        const rec = SpriteCache.get(this.caster.sprite);
+        if (rec && rec.loaded) {
+          if (this.caster.facingX < 0) ctx.scale(-1, 1);
+          ctx.drawImage(rec.img, -24, -24, 48, 48);
+        }
+        ctx.restore();
+      },
+
+      renderDummies(ctx) {
+        const showHitbox = document.getElementById("chkShowHitbox").checked;
+        const now = performance.now();
+
+        this.dummies.forEach(d => {
+          const pos = this.worldToScreen(d.x, d.y - (d.levitateOffset || 0));
+          const shadowPos = this.worldToScreen(d.x, d.y);
+          ctx.save();
+
+          const levScale = Math.max(0.4, 1 - (d.levitateOffset || 0) / 60);
+          ctx.fillStyle = "rgba(0,0,0,0.45)";
+          ctx.beginPath();
+          ctx.ellipse(shadowPos.x, shadowPos.y + d.radius * 0.85, d.radius * 0.9 * levScale, d.radius * 0.35 * levScale, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // 激流減速水渦
+          if (d.statuses["HydroDrag"]) {
+            ctx.save();
+            ctx.translate(shadowPos.x, shadowPos.y + d.radius * 0.85);
+            ctx.rotate(now * 0.008);
+            ctx.strokeStyle = "#38BDF8";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(0, 0, d.radius * 1.1, 0, Math.PI * 1.5);
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          ctx.translate(pos.x, pos.y);
+
+          if (showHitbox) {
+            ctx.strokeStyle = this.selectedDummy === d ? "#FACC15" : "rgba(239, 68, 68, 0.4)";
+            ctx.lineWidth = this.selectedDummy === d ? 2.5 : 1.2;
+            ctx.beginPath();
+            ctx.arc(0, 0, d.radius, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+
+          const rec = SpriteCache.get(d.sprite);
+          if (rec && rec.loaded) {
+            ctx.save();
+            if (d.statuses.Burn) {
+              const heatPulse = 1.0 + Math.sin(now * 0.012) * 0.25;
+              ctx.filter = `sepia(0.8) saturate(3) hue-rotate(-20deg) brightness(${heatPulse})`;
+            }
+            else if (d.statuses.Poison) ctx.filter = "hue-rotate(240deg) saturate(2)";
+            else if (d.statuses.Freeze) ctx.filter = "hue-rotate(180deg) brightness(1.2)";
+
+            const size = d.radius * 2.2;
+            ctx.drawImage(rec.img, -size / 2, -size / 2, size, size);
+            ctx.restore();
+          }
+
+          // 灼傷：雙層火苗
+          if (d.statuses.Burn) {
+            ctx.save();
+            for (let f = -1; f <= 1; f += 2) {
+              const flameY = d.radius * 0.4 + Math.sin(now * 0.015 + f) * 4;
+              ctx.fillStyle = "#F97316";
+              ctx.beginPath();
+              ctx.arc(f * 10, flameY, 6, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillStyle = "#FEF08A";
+              ctx.beginPath();
+              ctx.arc(f * 10, flameY - 2, 3, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.restore();
+          }
+
+          // 中毒：深紫氣泡與骷髏
+          if (d.statuses.Poison) {
+            ctx.save();
+            const bubbleY = -d.radius * 0.5 - ((now * 0.04) % 20);
+            ctx.fillStyle = "rgba(168, 85, 247, 0.65)";
+            ctx.strokeStyle = "#D8B4FE";
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.arc(Math.sin(now * 0.005) * 8, bubbleY, 4, 0, Math.PI * 2);
+            ctx.fill(); ctx.stroke();
+
+            ctx.fillStyle = "#A855F7";
+            ctx.font = "900 12px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("☠", 0, -d.radius - 16);
+            ctx.restore();
+          }
+
+          // 麻痺：雙色電弧
+          if (d.statuses.Paralysis) {
+            ctx.strokeStyle = "#FFFFFF";
+            ctx.lineWidth = 1.8;
+            for (let i = 0; i < 2; i++) {
+              ctx.beginPath();
+              ctx.moveTo(-d.radius * 0.7, -4 + i * 8);
+              ctx.lineTo(0, -d.radius * 0.5 + Math.sin(now * 0.02 + i) * 8);
+              ctx.lineTo(d.radius * 0.7, 4 + i * 8);
+              ctx.stroke();
+            }
+          }
+
+          // 冰凍：3D 折射透明稜柱冰棺
+          if (d.statuses.Freeze) {
+            ctx.save();
+            ctx.fillStyle = "rgba(56, 189, 248, 0.35)";
+            ctx.strokeStyle = "#E0F2FE";
+            ctx.lineWidth = 2.5;
+            const r = d.radius + 7;
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+              const a = (i * Math.PI) / 3 - Math.PI / 6;
+              const ix = Math.cos(a) * r;
+              const iy = Math.sin(a) * r;
+              if (i === 0) ctx.moveTo(ix, iy);
+              else ctx.lineTo(ix, iy);
+            }
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(-r * 0.4, -r * 0.7);
+            ctx.lineTo(r * 0.4, r * 0.7);
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          // 混亂：傾斜星芒問號
+          if (d.statuses.Confusion) {
+            ctx.save();
+            ctx.rotate(0.35);
+            const rot = now * 0.006;
+            for (let c = 0; c < 2; c++) {
+              const ang = rot + c * Math.PI;
+              const sx = Math.cos(ang) * (d.radius * 0.95);
+              const sy = Math.sin(ang) * (d.radius * 0.45) - d.radius - 8;
+              ctx.fillStyle = "#FACC15";
+              ctx.beginPath();
+              ctx.arc(sx, sy, 3.5, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.font = "900 13px 'Press Start 2P', sans-serif";
+            ctx.fillStyle = "#FACC15";
+            ctx.textAlign = "center";
+            ctx.fillText("?", 0, -d.radius - 14);
+            ctx.restore();
+          }
+
+          // 超夢念力眼
+          if (d.levitateOffset > 10) {
+            ctx.strokeStyle = "#C084FC";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(0, -d.radius - 18, 9, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = "#FFFFFF";
+            ctx.beginPath();
+            ctx.arc(0, -d.radius - 18, 4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // HP Bar
+          const barW = Math.max(34, d.radius * 1.6);
+          ctx.fillStyle = "#1E293B";
+          ctx.fillRect(-barW / 2, -d.radius - 12, barW, 4.5);
+          ctx.fillStyle = "#22C55E";
+          ctx.fillRect(-barW / 2, -d.radius - 12, barW * Math.max(0, d.hp / d.maxHp), 4.5);
+
+          ctx.restore();
+        });
+      },
+
+      renderMeleeEffects(ctx) {
+        this.meleeEffects.forEach(m => {
+          const pos = this.worldToScreen(m.x, m.y);
+          const prog = 1 - (m.timer / m.maxTime);
+          ctx.save();
+          ctx.translate(pos.x, pos.y);
+          ctx.globalAlpha = Math.max(0, 1 - prog);
+
+          // 1. 水炮：正弦流體外廓 + 浪花冠
+          if (m.skillId === "directional_hydro_pillar" || m.skillId === "eight_hydro_pillars") {
+            const isEight = m.skillId === "eight_hydro_pillars";
+            const pillars = isEight ? m.pillarsCount : 1;
+            const now = performance.now() * 0.008;
+
+            for (let pi = 0; pi < pillars; pi++) {
+              ctx.save();
+              const ang = isEight ? (pi * Math.PI * 2) / pillars : m.angle;
+              ctx.rotate(ang);
+
+              const pLen = m.length * Math.min(1, prog * 1.6);
+              const pWidth = m.width;
+
+              ctx.fillStyle = "rgba(56, 189, 248, 0.75)";
+              ctx.beginPath();
+              ctx.moveTo(10, -pWidth / 2);
+              for (let x = 10; x <= pLen; x += 15) {
+                const wave = Math.sin(now * 3 + x * 0.08) * 4;
+                ctx.lineTo(x, -pWidth / 2 + wave);
+              }
+              for (let x = pLen; x >= 10; x -= 15) {
+                const wave = Math.sin(now * 3 + x * 0.08) * 4;
+                ctx.lineTo(x, pWidth / 2 + wave);
+              }
+              ctx.closePath();
+              ctx.fill();
+
+              ctx.strokeStyle = "#FFFFFF";
+              ctx.lineWidth = 4.5;
+              ctx.beginPath();
+              ctx.moveTo(10, 0); ctx.lineTo(pLen * 0.95, 0);
+              ctx.stroke();
+
+              ctx.fillStyle = "#FFFFFF";
+              ctx.beginPath();
+              ctx.arc(pLen, 0, pWidth * 0.65, -Math.PI / 2, Math.PI / 2);
+              ctx.fill();
+
+              ctx.restore();
+            }
+          }
+
+          // 2. 藤鞭：S 彎曲 + 倒刺三角 + 芽苞圓點 + 末端音爆環
+          else if (m.skillId === "vine_whip") {
+            ctx.rotate(m.angle);
+            const reach = m.reach * Math.min(1, prog * 1.8);
+            const thickness = 8;
+            const waveFreq = 2.5;
+            const waveAmp = (1 - prog * 0.5) * 26;
+
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+
+            ctx.strokeStyle = "#14532D";
+            ctx.lineWidth = thickness + 3;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            for (let x = 0; x <= reach; x += 10) {
+              const t = x / reach;
+              const y = Math.sin(t * Math.PI * waveFreq) * waveAmp * Math.sin(t * Math.PI);
+              ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            ctx.strokeStyle = "#22C55E";
+            ctx.lineWidth = thickness;
+            ctx.stroke();
+
+            for (let step = 30; step < reach - 20; step += 25) {
+              const t = step / reach;
+              const y = Math.sin(t * Math.PI * waveFreq) * waveAmp * Math.sin(t * Math.PI);
+              const side = (step % 50 === 0) ? 1 : -1;
+
+              ctx.fillStyle = "#15803D";
+              ctx.beginPath();
+              ctx.moveTo(step, y);
+              ctx.lineTo(step + 6, y + side * (thickness + 6));
+              ctx.lineTo(step - 4, y + side * (thickness + 2));
+              ctx.closePath();
+              ctx.fill();
+
+              ctx.fillStyle = "#86EFAC";
+              ctx.beginPath();
+              ctx.arc(step, y + side * (thickness * 0.6), 2.2, 0, Math.PI * 2);
+              ctx.fill();
+            }
+
+            ctx.strokeStyle = "#BBF7D0";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(reach, 0, 16 * prog, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.strokeStyle = "#FFFFFF";
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.arc(reach, 0, 10 * prog, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+
+          // 3. 地震：內外圈裂隙
+          else if (m.skillId === "Earthquake") {
+            if (m.innerRadius) {
+              ctx.fillStyle = "rgba(120, 53, 15, 0.25)";
+              ctx.beginPath();
+              ctx.arc(0, 0, m.innerRadius * Math.min(1, prog * 1.5), 0, Math.PI * 2);
+              ctx.fill();
+            }
+
+            if (m.branches) {
+              m.branches.forEach(b => {
+                const curLen = b.length * Math.min(1, prog * 1.8);
+                ctx.strokeStyle = "#78350F";
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                const midX = Math.cos(b.ang + 0.15) * (curLen * 0.5);
+                const midY = Math.sin(b.ang + 0.15) * (curLen * 0.5);
+                const endX = Math.cos(b.ang) * curLen;
+                const endY = Math.sin(b.ang) * curLen;
+                ctx.lineTo(midX, midY); ctx.lineTo(endX, endY);
+                ctx.stroke();
+
+                ctx.strokeStyle = "#FEF08A";
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.moveTo(0, 0); ctx.lineTo(midX, midY); ctx.lineTo(endX, endY); ctx.stroke();
+              });
+            }
+          }
+
+          // 4. 十萬伏特靜電圈
+          else if (m.skillId === "static_aura") {
+            ctx.strokeStyle = "#FACC15";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, 0, m.radius, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+
+          // 5. 劈開居合：主刀光 + 後方追加 2 道動態漸隱殘影弧線
+          else if (m.skillId === "Slash") {
+            ctx.rotate(m.angle);
+            const curR = m.radius * (0.35 + prog * 0.65);
+            if (curR > 18) {
+              [-0.25, -0.12].forEach((offsetT, idx) => {
+                const trailR = curR * (0.75 - idx * 0.2);
+                ctx.strokeStyle = "rgba(56, 189, 248, 0.4)";
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                ctx.arc(0, 0, trailR, -0.5, 0.5);
+                ctx.stroke();
+              });
+
+              ctx.strokeStyle = m.color;
+              ctx.lineWidth = 10;
+              ctx.beginPath();
+              ctx.arc(0, 0, curR, -0.62, 0.62);
+              ctx.stroke();
+
+              ctx.strokeStyle = "#FFFFFF";
+              ctx.lineWidth = 3.5;
+              ctx.beginPath();
+              ctx.arc(0, 0, curR, -0.52, 0.52);
+              ctx.stroke();
+
+              if (m.cracks) {
+                m.cracks.forEach(c => {
+                  ctx.strokeStyle = "#FFFFFF";
+                  ctx.lineWidth = 2.5;
+                  ctx.beginPath();
+                  ctx.moveTo(curR * 0.4, c.offset);
+                  ctx.lineTo(curR * 0.95, c.offset * 1.3);
+                  ctx.stroke();
+                });
+              }
+            }
+          }
+
+          // 6. 抓：多段交錯爪痕
+          else if (m.skillId === "Scratch") {
+            ctx.rotate(m.angle);
+            const reach = m.reach * Math.min(1, prog * 1.5);
+            ctx.save();
+            ctx.strokeStyle = m.isFinisher ? "#DC2626" : "#FFFFFF";
+            ctx.lineWidth = m.isFinisher ? 4.5 : 2.5;
+
+            if (m.isFinisher) {
+              ctx.beginPath();
+              ctx.moveTo(reach * 0.2, -16); ctx.lineTo(reach * 0.9, 16);
+              ctx.moveTo(reach * 0.2, 16); ctx.lineTo(reach * 0.9, -16);
+              ctx.stroke();
+            } else {
+              [-10, 0, 10].forEach(off => {
+                ctx.beginPath();
+                ctx.arc(0, off, reach * 0.75, -0.42, 0.42);
+                ctx.stroke();
+              });
+            }
+            ctx.restore();
+          }
+
+          // 7. 火焰鳥熱風：金黃風刃 + 翻滾火浪
+          else if (m.skillId === "Moltres_Heatwave") {
+            ctx.rotate(m.angle);
+            const reach = m.radius * Math.min(1, prog * 1.4);
+
+            ctx.fillStyle = "rgba(249, 115, 22, 0.45)";
+            ctx.beginPath();
+            ctx.moveTo(0, 0); ctx.arc(0, 0, reach, -0.78, 0.78);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = "#FEF08A";
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.arc(0, 0, reach, -0.75, 0.75);
+            ctx.stroke();
+          }
+
+          // 8. 百裂拳赤紅氣爆環
+          else if (m.skillId === "martial_shockwave") {
+            const curR = m.radius * prog;
+            ctx.strokeStyle = m.color;
+            ctx.lineWidth = 6 * (1 - prog);
+            ctx.beginPath();
+            ctx.arc(0, 0, curR, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.restore();
+        });
+      },
+
+      // 輔助函式：繪製動態鋸齒雷電折線
+      drawFractalLightning(ctx, x1, y1, x2, y2, displaceScale, alphaFlicker) {
+        const steps = 4;
+        const pts = [{ x: x1, y: y1 }];
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const normX = -Math.sin(angle);
+        const normY = Math.cos(angle);
+
+        for (let i = 1; i < steps; i++) {
+          const t = i / steps;
+          const jitter = (Math.random() - 0.5) * displaceScale;
+          pts.push({
+            x: x1 + (x2 - x1) * t + normX * jitter,
+            y: y1 + (y2 - y1) * t + normY * jitter
+          });
+        }
+        pts.push({ x: x2, y: y2 });
+
+        // 外層金黃電漿
+        ctx.strokeStyle = "#FACC15";
+        ctx.lineWidth = 4.5;
+        ctx.beginPath();
+        pts.forEach((p, idx) => {
+          if (idx === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        });
+        ctx.stroke();
+
+        // 內核純白高溫閃爍
+        ctx.save();
+        ctx.globalAlpha = alphaFlicker;
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.lineWidth = 2.0;
+        ctx.stroke();
+        ctx.restore();
+      },
+
+      renderUltimateEffects(ctx) {
+        this.ultimateEffects.forEach(u => {
+          const pos = this.worldToScreen(u.x, u.y);
+          const prog = 1 - (u.timer / u.maxTime);
+          ctx.save();
+          ctx.translate(pos.x, pos.y);
+          ctx.globalAlpha = Math.max(0, 0.95 * (1 - prog * 0.6));
+
+          // 1. 【閃電鳥超武】動態非直線閃爍電弧網
+          if (u.skillId === "zapdos_charged_core") {
+            ctx.rotate(performance.now() * 0.012);
+            ctx.strokeStyle = "#FACC15";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            for (let i = 0; i < 8; i++) {
+              const a = (i * Math.PI) / 4;
+              ctx.lineTo(Math.cos(a) * u.radius, Math.sin(a) * u.radius);
+              ctx.lineTo(Math.cos(a + 0.39) * (u.radius * 0.55), Math.sin(a + 0.39) * (u.radius * 0.55));
+            }
+            ctx.closePath();
+            ctx.stroke();
+            ctx.fillStyle = "#FFFFFF";
+            ctx.beginPath();
+            ctx.arc(0, 0, 16, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (u.skillId === "zapdos_storm_web") {
+            if (u.hitPts) {
+              const flicker = 0.65 + Math.random() * 0.35; // 高頻閃爍係數
+
+              // 繪製非直線放射電弧與外圍跳躍電弧
+              u.hitPts.forEach((pt, idx) => {
+                const sPt = this.worldToScreen(pt.x, pt.y);
+                const lx = sPt.x - pos.x;
+                const ly = sPt.y - pos.y;
+
+                // 中心到節點非直線電弧
+                this.drawFractalLightning(ctx, 0, 0, lx, ly, 16, flicker);
+
+                // 節點間外圍非直線電網
+                const nextPt = u.hitPts[(idx + 1) % u.hitPts.length];
+                const nextSPt = this.worldToScreen(nextPt.x, nextPt.y);
+                const nlx = nextSPt.x - pos.x;
+                const nly = nextSPt.y - pos.y;
+                if (Math.random() > 0.15) { // 輕微間歇性漏電閃爍
+                  this.drawFractalLightning(ctx, lx, ly, nlx, nly, 14, flicker);
+                }
+
+                // 高壓雷球節點端點星芒脈衝
+                ctx.save();
+                ctx.translate(lx, ly);
+                ctx.rotate(performance.now() * 0.01);
+                ctx.fillStyle = "#FFFFFF";
+                ctx.beginPath();
+                ctx.arc(0, 0, 8 * flicker, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = "#FACC15";
+                ctx.lineWidth = 2.5;
+                ctx.strokeRect(-10 * flicker, -10 * flicker, 20 * flicker, 20 * flicker);
+                ctx.restore();
+              });
+            }
+          }
+
+          // 2. 急凍光線超武絕對零度暴風雪
+          else if (u.skillId === "absolute_zero_blizzard") {
+            const r = u.radius * Math.min(1, prog * 1.3);
+            const spin = performance.now() * 0.004;
+
+            const grad = ctx.createRadialGradient(0, 0, 10, 0, 0, r);
+            grad.addColorStop(0, "rgba(224, 242, 254, 0.45)");
+            grad.addColorStop(0.6, "rgba(56, 189, 248, 0.3)");
+            grad.addColorStop(1, "rgba(2, 132, 199, 0)");
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(0, 0, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = "#FFFFFF";
+            ctx.lineWidth = 3;
+            for (let k = 0; k < 6; k++) {
+              const a = spin + (k * Math.PI) / 3;
+              const px = Math.cos(a) * (r * 0.6);
+              const py = Math.sin(a) * (r * 0.6);
+              ctx.strokeRect(px - 14, py - 14, 28, 28);
+            }
+          }
+
+          // 3. 火焰鳥火鳳凰幻影衝刺
+          else if (u.skillId === "moltres_phoenix_rush") {
+            ctx.rotate(u.angle);
+            ctx.fillStyle = "rgba(249, 115, 22, 0.85)";
+            ctx.beginPath();
+            ctx.moveTo(60, 0); ctx.lineTo(-30, -55); ctx.lineTo(-10, 0); ctx.lineTo(-30, 55);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = "#FEF08A";
+            ctx.lineWidth = 3.5;
+            ctx.stroke();
+
+            ctx.fillStyle = "#FFFFFF";
+            ctx.beginPath();
+            ctx.arc(60, 0, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = "#DC2626";
+            ctx.lineWidth = 4;
+            [-15, 0, 15].forEach(yOff => {
+              ctx.beginPath();
+              ctx.moveTo(-20, yOff); ctx.lineTo(-75, yOff * 1.4);
+              ctx.stroke();
+            });
+          }
+
+          // 4. 急凍鳥極光幔帳
+          else if (u.skillId === "articuno_sheer_cold") {
+            const r = u.radius * Math.min(1, prog * 1.3);
+            for (let k = 0; k < 3; k++) {
+              const grad = ctx.createLinearGradient(-r, -r + k * 80, r, r);
+              grad.addColorStop(0, "rgba(56, 189, 248, 0.45)");
+              grad.addColorStop(0.5, "rgba(52, 211, 153, 0.35)");
+              grad.addColorStop(1, "rgba(192, 132, 252, 0.45)");
+              ctx.fillStyle = grad;
+              ctx.beginPath();
+              ctx.ellipse(0, (k - 1) * 60, r, 70, Math.PI / 12, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          // 5. 超夢純黑奇點與切割激光
+          else if (u.skillId === "mewtwo_oblivion") {
+            const r = u.radius * Math.min(1, prog * 1.4);
+            const spin = performance.now() * 0.005;
+
+            ctx.fillStyle = "#05050A";
+            ctx.strokeStyle = "#F472B6";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, 0, 24, 0, Math.PI * 2);
+            ctx.fill(); ctx.stroke();
+
+            for (let b = 0; b < 8; b++) {
+              const a = spin + (b * Math.PI) / 4;
+              ctx.strokeStyle = "rgba(192, 132, 252, 0.5)";
+              ctx.lineWidth = 8;
+              ctx.beginPath();
+              ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+              ctx.stroke();
+
+              ctx.strokeStyle = "#FFFFFF";
+              ctx.lineWidth = 3;
+              ctx.beginPath();
+              ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+              ctx.stroke();
+            }
+          }
+
+          // 6. 夢幻五彩流星雨
+          else if (u.skillId === "mew_supernova") {
+            const r = u.radius * Math.min(1, prog * 1.4);
+            const cols = ["#EF4444", "#38BDF8", "#22C55E", "#FACC15", "#EC4899"];
+            for (let s = 0; s < 12; s++) {
+              const sx = ((s * 57 + performance.now() * 0.4) % (r * 2)) - r;
+              const sy = ((s * 41 + performance.now() * 0.5) % (r * 2)) - r;
+              ctx.strokeStyle = cols[s % cols.length];
+              ctx.lineWidth = 2.5;
+              ctx.beginPath();
+              ctx.moveTo(sx, sy); ctx.lineTo(sx - 20, sy - 30);
+              ctx.stroke();
+              ctx.fillStyle = "#FFFFFF";
+              ctx.beginPath();
+              ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          // 7. 大字爆炎
+          else if (u.skillId === "drifting_daimonji") {
+            ctx.rotate(u.angle);
+            const r = u.radius;
+            ctx.strokeStyle = "#DC2626";
+            ctx.lineWidth = 18;
+            ctx.lineCap = "round";
+            const drawDaimonji = () => {
+              ctx.beginPath();
+              ctx.moveTo(-r * 0.7, -r * 0.2); ctx.lineTo(r * 0.7, -r * 0.2);
+              ctx.moveTo(0, -r * 0.8); ctx.quadraticCurveTo(-r * 0.1, r * 0.1, -r * 0.7, r * 0.7);
+              ctx.moveTo(0, -r * 0.2); ctx.quadraticCurveTo(r * 0.2, r * 0.2, r * 0.7, r * 0.7);
+            };
+            drawDaimonji(); ctx.stroke();
+            ctx.strokeStyle = "#FEF08A"; ctx.lineWidth = 4; drawDaimonji(); ctx.stroke();
+          }
+
+          // 8. 【暗影球超武】二段式漸進放大黑洞（外圍引力漩渦流與波紋）
+          else if (u.skillId === "drifting_shadow_blackhole") {
+            const distTraveled = Math.hypot(u.x - u.startX, u.y - u.startY);
+            let curRadius = u.baseRadius;
+            if (distTraveled > 100) {
+              const expandProgress = Math.min(1, (distTraveled - 100) / 160);
+              const smoothT = expandProgress * expandProgress * (3 - 2 * expandProgress);
+              curRadius = u.baseRadius + (u.maxRadius - u.baseRadius) * smoothT;
+            }
+
+            // 引力漩渦流
+            const spin = performance.now() * 0.007;
+            ctx.strokeStyle = "rgba(168, 85, 247, 0.45)";
+            ctx.lineWidth = 3;
+            for (let a = 0; a < 3; a++) {
+              ctx.beginPath();
+              ctx.arc(0, 0, curRadius * (0.65 + a * 0.2), spin + a * 2.1, spin + a * 2.1 + 1.2);
+              ctx.stroke();
+            }
+
+            // 本體純黑奇點
+            ctx.fillStyle = "#020617";
+            ctx.strokeStyle = "#C084FC";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, 0, curRadius, 0, Math.PI * 2);
+            ctx.fill(); ctx.stroke();
+          }
+          ctx.restore();
+        });
+      },
+
+      renderProjectiles(ctx) {
+        this.projectiles.forEach(p => {
+          const pos = this.worldToScreen(p.x, p.y);
+          ctx.save();
+          ctx.translate(pos.x, pos.y);
+
+          // 1. 噴射火焰滾動淚滴火舌
+          if (p.vfx === "Flamethrower") {
+            ctx.rotate(Math.atan2(p.vy, p.vx));
+            const r = p.radius;
+
+            ctx.fillStyle = "#DC2626";
+            ctx.beginPath();
+            ctx.ellipse(0, 0, r * 1.1, r * 0.75, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#F97316";
+            ctx.beginPath();
+            ctx.ellipse(r * 0.2, 0, r * 0.75, r * 0.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#FEF08A";
+            ctx.beginPath();
+            ctx.ellipse(r * 0.35, 0, r * 0.4, r * 0.28, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // 2. 暗影球普攻：自轉黑洞核 + 旋轉吸附臂
+          else if (p.vfx === "Shadow Ball") {
+            const rot = performance.now() * 0.008;
+            ctx.rotate(rot);
+
+            // 外圍旋轉吸扯螺旋臂
+            ctx.strokeStyle = "#A855F7";
+            ctx.lineWidth = 2.5;
+            for (let k = 0; k < 3; k++) {
+              ctx.beginPath();
+              ctx.arc(0, 0, p.radius * 0.9, k * 2.1, k * 2.1 + 1.0);
+              ctx.stroke();
+            }
+
+            // 內核純黑奇點
+            ctx.fillStyle = "#05050A";
+            ctx.strokeStyle = "#C084FC";
+            ctx.lineWidth = 2.2;
+            ctx.beginPath();
+            ctx.arc(0, 0, p.radius * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          }
+
+          // 3. 超夢念刃：純白激光刃尖 + 深紫黑刀身
+          else if (p.vfx === "mewtwo_blade") {
+            ctx.rotate(Math.atan2(p.vy, p.vx));
+
+            // 紫黑內刃
+            ctx.fillStyle = "#3B0764";
+            ctx.beginPath();
+            ctx.arc(0, 0, p.radius, -0.65, 0.65);
+            ctx.arc(0, 0, p.radius * 0.4, 0.65, -0.65, true);
+            ctx.closePath();
+            ctx.fill();
+
+            // 純白切割光邊
+            ctx.strokeStyle = "#FFFFFF";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, 0, p.radius, -0.6, 0.6);
+            ctx.stroke();
+          }
+
+          // 4. 種子炸彈立體木紋橡子
+          else if (p.vfx === "seed_nut") {
+            const r = p.radius;
+            ctx.fillStyle = "#78350F";
+            ctx.beginPath();
+            ctx.arc(0, -r * 0.3, r * 0.9, Math.PI, 0);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = "#65A30D";
+            ctx.beginPath();
+            ctx.moveTo(-r * 0.85, -r * 0.25);
+            ctx.quadraticCurveTo(-r * 0.9, r * 0.6, 0, r * 1.1);
+            ctx.quadraticCurveTo(r * 0.9, r * 0.6, r * 0.85, -r * 0.25);
+            ctx.closePath();
+            ctx.fill();
+          }
+
+          // 5. 急凍光線筆直六角冰柱束
+          else if (p.vfx === "ice_beam") {
+            ctx.rotate(Math.atan2(p.vy, p.vx));
+            ctx.fillStyle = "#E0F2FE";
+            ctx.beginPath();
+            ctx.roundRect(-p.radius, -p.radius * 0.35, p.radius * 2, p.radius * 0.7, 4);
+            ctx.fill();
+
+            ctx.strokeStyle = "#38BDF8";
+            ctx.lineWidth = 1.8;
+            ctx.stroke();
+          }
+
+          // 6. 閃電鳥雷羽
+          else if (p.vfx === "thunder_feather") {
+            ctx.rotate(Math.atan2(p.vy, p.vx));
+            ctx.fillStyle = "#FACC15";
+            ctx.strokeStyle = "#FFFFFF";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(18, 0); ctx.lineTo(-12, -8); ctx.lineTo(-6, 0); ctx.lineTo(-12, 8);
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+          }
+
+          // 7. 夢幻彩虹光泡
+          else if (p.vfx === "mew_sphere") {
+            ctx.fillStyle = "rgba(244, 114, 182, 0.35)";
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+            ctx.fill(); ctx.stroke();
+
+            ctx.fillStyle = "#FFFFFF";
+            ctx.beginPath();
+            ctx.arc(-p.radius * 0.3, -p.radius * 0.3, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // 8. 急凍鳥冰晶旋風
+          else if (p.vfx === "ice_tornado") {
+            ctx.rotate(performance.now() * 0.008);
+            ctx.fillStyle = "#E0F2FE";
+            ctx.beginPath();
+            ctx.moveTo(0, -p.radius); ctx.lineTo(p.radius * 0.7, 0); ctx.lineTo(0, p.radius);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = "#0284C7";
+            ctx.beginPath();
+            ctx.moveTo(0, -p.radius); ctx.lineTo(-p.radius * 0.7, 0); ctx.lineTo(0, p.radius);
+            ctx.closePath();
+            ctx.fill();
+          }
+
+          // 9. 空手劈飛拳
+          else if (p.vfx === "fist") {
+            ctx.rotate(p.angle);
+            ctx.fillStyle = "rgba(239, 68, 68, 0.75)";
+            ctx.strokeStyle = "#FEF08A";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.roundRect(-16, -14, 28, 28, 8);
+            ctx.fill(); ctx.stroke();
+
+            ctx.fillStyle = "#FFFFFF";
+            for (let k = -1; k <= 1; k++) {
+              ctx.beginPath();
+              ctx.arc(10, k * 7, 3.5, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          // 其餘常規投射物
+          else {
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        });
+      },
+
+      renderLightning(ctx) {
+        this.lightningArcs.forEach(arc => {
+          ctx.save();
+          ctx.strokeStyle = arc.color || "#FACC15";
+          ctx.lineWidth = 5;
+          ctx.beginPath();
+          arc.pts.forEach((pt, idx) => {
+            const pos = this.worldToScreen(pt.x, pt.y);
+            if (idx === 0) ctx.moveTo(pos.x, pos.y);
+            else ctx.lineTo(pos.x, pos.y);
+          });
+          ctx.stroke();
+
+          ctx.strokeStyle = "#FFFFFF";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.restore();
+        });
+      },
+
+      renderParticles(ctx) {
+        this.particles.forEach(pt => {
+          const pos = this.worldToScreen(pt.x, pt.y);
+          ctx.save();
+          ctx.fillStyle = pt.color;
+          ctx.globalAlpha = Math.max(0, pt.life / 0.4);
+
+          if (pt.shape === "petal") {
+            ctx.translate(pos.x, pos.y);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, pt.size * 1.4, pt.size * 0.7, Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (pt.shape === "rock") {
+            ctx.fillRect(pos.x, pos.y, pt.size, pt.size);
+          } else if (pt.shape === "star") {
+            ctx.translate(pos.x, pos.y);
+            ctx.beginPath();
+            ctx.moveTo(0, -pt.size);
+            ctx.lineTo(pt.size * 0.3, 0);
+            ctx.lineTo(0, pt.size);
+            ctx.lineTo(-pt.size * 0.3, 0);
+            ctx.closePath();
+            ctx.fill();
+          } else {
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, pt.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        });
+      },
+
+      renderFloatingTexts(ctx) {
+        this.floatingTexts.forEach(ft => {
+          const pos = this.worldToScreen(ft.x, ft.y);
+          ctx.save();
+          ctx.font = "900 13px 'Noto Sans TC', sans-serif";
+          ctx.textAlign = "center";
+          ctx.strokeStyle = "#0F172A";
+          ctx.lineWidth = 3;
+          ctx.strokeText(ft.text, pos.x, pos.y);
+          ctx.fillStyle = ft.color;
+          ctx.fillText(ft.text, pos.x, pos.y);
+          ctx.restore();
+        });
+      }
+    };
+
+    window.addEventListener("DOMContentLoaded", () => SandboxApp.init());
+  </script>
+</body>
+</html>

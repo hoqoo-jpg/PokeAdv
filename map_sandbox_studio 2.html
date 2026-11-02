@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>GBA 關卡地圖沙盒實驗室 ‧ 旗艦優化版 | Map Sandbox Studio Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --pixel-font: 'Press Start 2P', 'Noto Sans TC', monospace;
+      --body-font: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    * { 
+      box-sizing: border-box; 
+      user-select: none; 
+      -webkit-user-select: none; 
+      touch-action: none;
+    }
+    body, html { 
+      margin: 0; padding: 0; width: 100%; height: 100%; 
+      overflow: hidden; background-color: #0b1120; 
+      font-family: var(--body-font); color: #1e293b; 
+    }
+    canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+    .font-pixel { font-family: var(--pixel-font); }
+    .pixel-sprite { image-rendering: pixelated; }
+
+    /* Touch Joystick Overlay */
+    #touchJoyBase {
+      position: absolute;
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(15,23,42,0.6) 75%);
+      border: 2.5px solid rgba(250, 204, 21, 0.85);
+      box-shadow: 0 0 16px rgba(0,0,0,0.45);
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      z-index: 30;
+      display: none;
+    }
+    #touchJoyStick {
+      position: absolute;
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fde047 0%, #f59e0b 100%);
+      border: 2.5px solid #0f172a;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      z-index: 31;
+      display: none;
+    }
+
+    /* Floating UI Glass panels */
+    .sb-glass-panel {
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(8px);
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      color: #f8fafc;
+    }
+  </style>
+</head>
+<body class="relative w-screen h-screen overflow-hidden select-none bg-slate-950">
+
+  <!-- MAIN CANVAS -->
+  <canvas id="sandboxCanvas" class="absolute inset-0 z-0"></canvas>
+
+  <!-- DYNAMIC TOUCH JOYSTICK -->
+  <div id="touchJoyBase"></div>
+  <div id="touchJoyStick"></div>
+
+  <!-- TOP STATUS & TOOLBAR -->
+  <header class="absolute top-2 left-2 right-2 z-20 pointer-events-none flex flex-wrap items-center justify-between gap-2">
+    <!-- Left: Biome & Coordinates Inspector -->
+    <div class="pointer-events-auto sb-glass-panel px-3 py-2 flex items-center gap-3">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-map-location-dot text-amber-400 text-base"></i>
+        <div>
+          <div id="inspectorBiomeTitle" class="text-xs font-black text-amber-300">華藍海岬 ‧ 黃金海岸木棧道</div>
+          <div class="text-[10px] text-slate-300 font-mono">
+            Pos: <span id="inspectorPos" class="text-white font-bold">(0, 0)</span> | 
+            Chunk: <span id="inspectorChunk" class="text-sky-300 font-bold">[0, 0]</span> | 
+            地形: <span id="inspectorTerrain" class="text-emerald-400 font-bold">一般 (1.0x)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Quick Camera & Speed Controls -->
+    <div class="pointer-events-auto sb-glass-panel px-2.5 py-1.5 flex items-center gap-2 text-xs font-bold">
+      <button id="btnCamMode" onclick="SandboxApp.toggleCamMode()" class="px-2.5 py-1 rounded-lg border border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700 flex items-center gap-1.5">
+        <i class="fa-solid fa-crosshairs text-sky-400"></i> <span id="camModeText">跟隨玩家</span>
+      </button>
+
+      <button onclick="SandboxApp.cyclePlayerSpeed()" class="px-2.5 py-1 rounded-lg border border-slate-600 bg-slate-800 text-amber-300 hover:bg-slate-700 font-mono">
+        <i class="fa-solid fa-person-running"></i> <span id="speedMultiplierText">1x 速</span>
+      </button>
+
+      <button onclick="SandboxApp.toggleDock()" class="px-2.5 py-1 rounded-lg border border-amber-500 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 flex items-center gap-1">
+        <i class="fa-solid fa-sliders"></i> <span>測試工具箱</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- BOTTOM FLOATING SANDBOX CONTROLS DOCK -->
+  <div id="sandboxDock" class="absolute bottom-2 left-2 right-2 sm:left-auto sm:right-3 sm:bottom-3 sm:w-[500px] z-20 pointer-events-auto sb-glass-panel p-3.5 flex flex-col gap-3 transition-transform duration-200">
+    <!-- Dock Header -->
+    <div class="flex items-center justify-between border-b border-slate-700/80 pb-2">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-screwdriver-wrench text-amber-400 text-sm"></i>
+        <span class="text-xs sm:text-sm font-black text-white">關卡地圖沙盒調校器 (Sandbox Pro)</span>
+      </div>
+      <button onclick="SandboxApp.toggleDock()" class="text-slate-400 hover:text-white px-1.5 text-xs">✕</button>
+    </div>
+
+    <!-- 1. Biome Stage Switching -->
+    <div>
+      <div class="text-[11px] font-bold text-slate-300 mb-1.5 flex justify-between">
+        <span><i class="fa-solid fa-earth-asia text-blue-400"></i> 切換測試關卡生態：</span>
+        <span id="biomeFeatureTag" class="text-amber-400 font-black">[深水海域 ‧ 狹窄木橋防守]</span>
+      </div>
+      <div class="grid grid-cols-3 gap-1.5 text-xs font-black">
+        <button onclick="SandboxApp.switchBiome('cerulean_bay')" id="btnBiomeCerulean" class="py-1.5 px-2 rounded-lg border border-blue-500 bg-blue-600 text-white shadow">
+          1. 華藍窄木橋
+        </button>
+        <button onclick="SandboxApp.switchBiome('sky_pillar')" id="btnBiomeSky" class="py-1.5 px-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-300">
+          2. 石英神殿柱
+        </button>
+        <button onclick="SandboxApp.switchBiome('pallet')" id="btnBiomePallet" class="py-1.5 px-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-300">
+          3. 森林跳崖
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. Time-of-Day & Cloud Shadows Slider -->
+    <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800 space-y-2 text-xs">
+      <div>
+        <div class="flex justify-between items-center mb-1 text-[11px]">
+          <span class="text-slate-300 font-bold"><i class="fa-solid fa-sun text-amber-400"></i> 晝夜環境演進：</span>
+          <span id="timeOfDayLabel" class="text-amber-400 font-black">正午陽光 (Noon)</span>
+        </div>
+        <input id="timeOfDaySlider" oninput="SandboxApp.setTimeOfDay(this.value)" type="range" min="0" max="900" value="260" class="w-full accent-amber-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg" />
+        <div class="flex justify-between text-[9px] font-bold text-slate-400 mt-0.5">
+          <span>清晨</span><span>正午</span><span>黃昏</span><span>夜幕</span>
+        </div>
+      </div>
+      <div class="pt-1 border-t border-slate-800/80">
+        <div class="flex justify-between items-center mb-1 text-[11px]">
+          <span class="text-slate-300 font-bold"><i class="fa-solid fa-cloud text-sky-400"></i> 飄動雲影濃度：</span>
+          <span id="cloudDensityLabel" class="text-sky-300 font-mono font-bold">100%</span>
+        </div>
+        <input id="cloudDensitySlider" oninput="SandboxApp.setCloudDensity(this.value)" type="range" min="0" max="100" value="100" class="w-full accent-sky-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg" />
+      </div>
+    </div>
+
+    <!-- 3. Camera Zoom & Visual Layers -->
+    <div>
+      <div class="flex justify-between items-center mb-1 text-[11px]">
+        <span class="text-slate-300 font-bold"><i class="fa-solid fa-magnifying-glass text-emerald-400"></i> 視角縮放：</span>
+        <span id="zoomDisplay" class="text-emerald-400 font-mono font-bold">1.00x</span>
+      </div>
+      <input id="zoomSlider" oninput="SandboxApp.setZoom(this.value)" type="range" min="30" max="250" value="100" class="w-full accent-emerald-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg" />
+    </div>
+
+    <!-- 4. Collision Wireframe & Mob Simulation Buttons -->
+    <div class="flex items-center justify-between flex-wrap gap-1.5 text-xs font-bold pt-1 border-t border-slate-700/80">
+      <button onclick="SandboxApp.toggleWireframes()" id="btnWireframe" class="px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1">
+        <i class="fa-solid fa-draw-polygon text-red-400"></i> <span>碰撞紅框: 關</span>
+      </button>
+
+      <button onclick="SandboxApp.spawnDummyMobs(15)" class="px-2.5 py-1.5 rounded-lg border border-amber-600 bg-amber-600/20 text-amber-300 hover:bg-amber-600/30 flex items-center gap-1">
+        <i class="fa-solid fa-users text-amber-400"></i> <span>+15 隻測試怪</span>
+      </button>
+
+      <button onclick="SandboxApp.clearDummyMobs()" class="px-2 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 hover:text-red-400">
+        <i class="fa-solid fa-trash"></i> 清空怪群
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * ============================================================================
+     * 1. RELIABLE CDN IMAGES & PROCEDURAL PIXEL FALLBACK (100% VISIBLE)
+     * ============================================================================
+     */
+    const SPRITE_URLS = {
+      player: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png",
+      trainer: "https://play.pokemonshowdown.com/sprites/trainers/ash.png",
+      dummyMob: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/16.png",
+      dummyMobWater: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/72.png"
+    };
+
+    const SpriteLoader = {
+      cache: new Map(),
+      get(url) {
+        if (this.cache.has(url)) return this.cache.get(url);
+        const record = { img: new Image(), loaded: false, fallback: false };
+        record.img.onload = () => { record.loaded = true; };
+        record.img.onerror = () => { record.fallback = true; };
+        record.img.src = url;
+        this.cache.set(url, record);
+        return record;
+      }
+    };
+
+    Object.values(SPRITE_URLS).forEach(url => SpriteLoader.get(url));
+
+    function drawProceduralSprite(ctx, x, y, type, size = 44, facingX = -1) {
+      ctx.save();
+      ctx.translate(x, y);
+      if (facingX > 0) ctx.scale(-1, 1);
+      const half = size / 2;
+
+      ctx.fillStyle = "rgba(15, 23, 42, 0.35)";
+      ctx.fillRect(-half * 0.7, half * 0.55, size * 0.7, 6);
+
+      if (type === "player") {
+        ctx.fillStyle = "#FACC15";
+        ctx.fillRect(-half * 0.6, -half * 0.5, size * 0.6, size * 0.8);
+        ctx.strokeStyle = "#1E293B";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-half * 0.6, -half * 0.5, size * 0.6, size * 0.8);
+        ctx.fillRect(-half * 0.75, -half * 1.1, 5, 12);
+        ctx.fillRect(half * 0.35, -half * 1.1, 5, 12);
+        ctx.fillStyle = "#EF4444";
+        ctx.fillRect(-half * 0.6, -half * 0.2, 4, 4);
+      } else {
+        ctx.fillStyle = "#A890F0";
+        ctx.fillRect(-half * 0.5, -half * 0.4, size * 0.5, size * 0.6);
+        ctx.strokeStyle = "#1E293B";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(-half * 0.5, -half * 0.4, size * 0.5, size * 0.6);
+        ctx.fillStyle = "#F59E0B";
+        ctx.fillRect(-half * 0.8, -half * 0.2, 5, 4);
+      }
+      ctx.restore();
+    }
+
+    /**
+     * ============================================================================
+     * 2. GBA BIOME DEFINITIONS: REFINED WITH FULL LEVEL DESIGN PRINCIPLES
+     * ============================================================================
+     */
+    const BIOMES = {
+      // 1. Cerulean Bay: Deep Ocean, T-Shaped Boardwalks, Sand Transition, Sandy Islets
+      cerulean_bay: {
+        id: "cerulean_bay",
+        name: "華藍海岬 ‧ 黃金海岸木棧道",
+        tag: "[深水海域 ‧ 狹窄木橋防守]",
+        tileLight: "#695843",
+        tileDark: "#5B4B38",
+        roadColor: "#85522D",
+        roadBorder: "#4A2A12",
+        slowZoneColor: "#2C4C3E",
+        waterColor: "#0284C7",
+        hasPier: true,
+        hasColonnade: false,
+        hasLedges: false
+      },
+      // 2. Indigo Plateau / Sky Pillar: Grand Marble Avenue, Colossal Statues, Gravity Wells
+      sky_pillar: {
+        id: "sky_pillar",
+        name: "石英高原 ‧ 冠軍之路古神殿柱廊",
+        tag: "[巨大石柱掩體 ‧ 超能重力陣]",
+        tileLight: "#2B243D",
+        tileDark: "#221C32",
+        roadColor: "#3D3356",
+        roadBorder: "#D97706",
+        slowZoneColor: "#4C1D95",
+        waterColor: "#0E7490",
+        hasPier: false,
+        hasColonnade: true,
+        hasLedges: false
+      },
+      // 3. Pallet / Viridian Forest: 1-Way Ledges with Funnel Stair Gaps, Houses & Oaks
+      pallet: {
+        id: "pallet",
+        name: "真新鎮郊外 ‧ 常磐跳崖密林",
+        tag: "[跳台甩怪迷宮 ‧ 階梯漏斗]",
+        tileLight: "#2E5A36",
+        tileDark: "#274E2E",
+        roadColor: "#6E563B",
+        roadBorder: "#42311E",
+        slowZoneColor: "#1B3B22",
+        waterColor: "#1D4ED8",
+        hasPier: false,
+        hasColonnade: false,
+        hasLedges: true
+      }
+    };
+
+    /**
+     * ============================================================================
+     * 3. MAP SANDBOX STUDIO ENGINE (SandboxApp)
+     * ============================================================================
+     */
+    const SandboxApp = {
+      canvas: null,
+      ctx: null,
+      width: window.innerWidth,
+      height: window.innerHeight,
+
+      currentBiome: BIOMES.cerulean_bay,
+      chunkCache: new Map(),
+
+      // Camera State
+      camX: 0,
+      camY: 0,
+      zoom: 1.0,
+      camFollowPlayer: true,
+      isPanning: false,
+      lastMouseX: 0,
+      lastMouseY: 0,
+
+      // Time & Atmosphere
+      timeOfDaySec: 260, // Default to Noon for clear testing
+      cloudDensity: 1.0,
+      cloudTime: 0,
+      clouds: [],
+
+      // Testing Elements
+      player: {
+        x: 0,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        facingX: -1,
+        facingY: 1,
+        walkBob: 0,
+        radius: 18,
+        baseSpeed: 175,
+        speedMultiplier: 1.0,
+        isJumpingLedge: false,
+        jumpTimer: 0
+      },
+      dummyMobs: [],
+      particles: [],
+
+      // Virtual Joystick
+      touchInput: {
+        active: false,
+        touchId: null,
+        startX: 0,
+        startY: 0,
+        currX: 0,
+        currY: 0,
+        dx: 0,
+        dy: 0,
+        maxRadius: 48
+      },
+
+      showWireframes: false,
+      keys: {},
+
+      init() {
+        this.canvas = document.getElementById("sandboxCanvas");
+        this.ctx = this.canvas.getContext("2d");
+        this.resize();
+        window.addEventListener("resize", () => this.resize());
+
+        this.initClouds();
+        this.bindInputs();
+
+        this.lastTime = performance.now();
+        requestAnimationFrame((t) => this.loop(t));
+      },
+
+      resize() {
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+      },
+
+      initClouds() {
+        this.clouds = [];
+        for (let i = 0; i < 6; i++) {
+          this.clouds.push({
+            x: (Math.random() - 0.5) * 3000,
+            y: (Math.random() - 0.5) * 3000,
+            w: 240 + Math.random() * 200,
+            h: 120 + Math.random() * 100,
+            speed: 18 + Math.random() * 16
+          });
+        }
+      },
+
+      bindInputs() {
+        window.addEventListener("keydown", (e) => {
+          this.keys[e.key.toLowerCase()] = true;
+          if (e.key === " ") this.triggerHopTest();
+        });
+        window.addEventListener("keyup", (e) => {
+          this.keys[e.key.toLowerCase()] = false;
+        });
+
+        const joyBase = document.getElementById("touchJoyBase");
+        const joyStick = document.getElementById("touchJoyStick");
+
+        const onTouchStart = (e) => {
+          for (let i = 0; i < e.changedTouches.length; i++) {
+            const t = e.changedTouches[i];
+            if (t.clientX < this.width * 0.65 && !this.touchInput.active) {
+              this.touchInput.active = true;
+              this.touchInput.touchId = t.identifier;
+              this.touchInput.startX = t.clientX;
+              this.touchInput.startY = t.clientY;
+              this.touchInput.currX = t.clientX;
+              this.touchInput.currY = t.clientY;
+              this.touchInput.dx = 0;
+              this.touchInput.dy = 0;
+
+              joyBase.style.left = `${t.clientX}px`;
+              joyBase.style.top = `${t.clientY}px`;
+              joyBase.style.display = "block";
+
+              joyStick.style.left = `${t.clientX}px`;
+              joyStick.style.top = `${t.clientY}px`;
+              joyStick.style.display = "block";
+              break;
+            }
+          }
+        };
+
+        const onTouchMove = (e) => {
+          if (!this.touchInput.active) return;
+          for (let i = 0; i < e.changedTouches.length; i++) {
+            const t = e.changedTouches[i];
+            if (t.identifier === this.touchInput.touchId) {
+              const distX = t.clientX - this.touchInput.startX;
+              const distY = t.clientY - this.touchInput.startY;
+              const len = Math.hypot(distX, distY);
+              const maxR = this.touchInput.maxRadius;
+
+              if (len > 0) {
+                const clamp = Math.min(len, maxR);
+                this.touchInput.dx = (distX / len) * (clamp / maxR);
+                this.touchInput.dy = (distY / len) * (clamp / maxR);
+                this.touchInput.currX = this.touchInput.startX + (distX / len) * clamp;
+                this.touchInput.currY = this.touchInput.startY + (distY / len) * clamp;
+              }
+              joyStick.style.left = `${this.touchInput.currX}px`;
+              joyStick.style.top = `${this.touchInput.currY}px`;
+              break;
+            }
+          }
+        };
+
+        const onTouchEnd = (e) => {
+          if (!this.touchInput.active) return;
+          for (let i = 0; i < e.changedTouches.length; i++) {
+            const t = e.changedTouches[i];
+            if (t.identifier === this.touchInput.touchId) {
+              this.touchInput.active = false;
+              this.touchInput.touchId = null;
+              this.touchInput.dx = 0;
+              this.touchInput.dy = 0;
+              joyBase.style.display = "none";
+              joyStick.style.display = "none";
+              break;
+            }
+          }
+        };
+
+        window.addEventListener("touchstart", onTouchStart, { passive: false });
+        window.addEventListener("touchmove", onTouchMove, { passive: false });
+        window.addEventListener("touchend", onTouchEnd);
+        window.addEventListener("touchcancel", onTouchEnd);
+
+        this.canvas.addEventListener("mousedown", (e) => {
+          if (e.button === 0 || e.button === 2) {
+            this.isPanning = true;
+            this.lastMouseX = e.clientX;
+            this.lastMouseY = e.clientY;
+          }
+        });
+        window.addEventListener("mousemove", (e) => {
+          if (this.isPanning) {
+            const dx = e.clientX - this.lastMouseX;
+            const dy = e.clientY - this.lastMouseY;
+            this.lastMouseX = e.clientX;
+            this.lastMouseY = e.clientY;
+
+            this.camX -= dx / this.zoom;
+            this.camY -= dy / this.zoom;
+            if (this.camFollowPlayer) {
+              this.camFollowPlayer = false;
+              document.getElementById("camModeText").textContent = "自由視角";
+            }
+          }
+        });
+        window.addEventListener("mouseup", () => {
+          this.isPanning = false;
+        });
+
+        this.canvas.addEventListener("wheel", (e) => {
+          e.preventDefault();
+          const factor = e.deltaY < 0 ? 1.12 : 0.88;
+          this.setZoom(Math.round(this.zoom * factor * 100));
+        }, { passive: false });
+      },
+
+      /**
+       * ============================================================================
+       * 4. GBA CHUNK BUILDER (Full Visual Fidelity: Houses, Oaks, Piers, Pillars)
+       * ============================================================================
+       */
+      getBiomeChunk(cx, cy) {
+        const stage = this.currentBiome;
+        const key = `${stage.id}:${cx},${cy}`;
+        if (this.chunkCache.has(key)) return this.chunkCache.get(key);
+
+        const size = 600;
+        const baseX = cx * size;
+        const baseY = cy * size;
+        const isCenter = (cx === 0 && cy === 0);
+
+        const seed = Math.abs((cx * 73856093) ^ (cy * 19349663));
+        const pseudoRand = (n) => {
+          const x = Math.sin(seed + n * 127.1) * 43758.5453;
+          return x - Math.floor(x);
+        };
+
+        const chunk = {
+          cx, cy, baseX, baseY, size,
+          roads: [],
+          piers: [],
+          waterTiles: [],
+          sandIslets: [],
+          grassTiles: [],
+          ledges: [],       // 1-Way downward jumping cliffs
+          obstacles: [],    // Houses, Oaks, Reefs, Colonnade Pillars
+          decorList: []
+        };
+
+        if (stage.id === "cerulean_bay") {
+          // --- 1. Cerulean Bay: Deep Ocean + Narrow Wooden Boardwalks + Sand Islets ---
+          // Ocean base covers the whole chunk
+          chunk.waterTiles.push({ x: baseX, y: baseY, w: size, h: size });
+
+          // Cross-Ocean T-Shaped / Interconnected Narrow Boardwalks (72px = 2.4 tiles wide)
+          chunk.piers.push({ x: baseX + 264, y: baseY, w: 72, h: size, dir: "V" });
+          if (pseudoRand(3) > 0.3) {
+            chunk.piers.push({ x: baseX, y: baseY + 264, w: size, h: 72, dir: "H" });
+          }
+
+          // Sandy Islets (Safe Havens with palm/reefs)
+          if (!isCenter && pseudoRand(5) > 0.35) {
+            const islx = baseX + 70 + Math.floor(pseudoRand(6) * 140);
+            const isly = baseY + 70 + Math.floor(pseudoRand(7) * 140);
+            chunk.sandIslets.push({ x: islx, y: isly, w: 140, h: 120 });
+            // Palm tree or reef on the islet
+            chunk.obstacles.push({
+              x: islx + 40, y: isly + 30, w: 60, h: 60, kind: "reef"
+            });
+          }
+
+          // Coastal Starfish & Shells
+          for (let i = 0; i < 5; i++) {
+            chunk.decorList.push({
+              x: baseX + 50 + Math.floor(pseudoRand(i * 4 + 30) * (size - 100)),
+              y: baseY + 50 + Math.floor(pseudoRand(i * 4 + 31) * (size - 100)),
+              type: i % 2 === 0 ? "starfish" : "shell"
+            });
+          }
+
+        } else if (stage.id === "sky_pillar") {
+          // --- 2. Indigo Plateau / Sky Pillar: Grand Marble Avenue, Symmetrical Statues, Psychic Wells ---
+          // Central 6-Tile Wide Marble Avenue (w: 180)
+          chunk.roads.push({ x: baseX + 210, y: baseY, w: 180, h: size, dir: "V", isMarble: true });
+
+          // Symmetrical Colossal Stone Statues / Pillars on both sides of the avenue
+          for (let row = 0; row < 2; row++) {
+            const py = baseY + 120 + row * 260;
+            // Left Statue
+            chunk.obstacles.push({ x: baseX + 140, y: py, w: 56, h: 72, kind: "pillar" });
+            // Right Statue
+            chunk.obstacles.push({ x: baseX + 404, y: py, w: 56, h: 72, kind: "pillar" });
+          }
+
+          // Rotating Psychic Gravity Wells (Double-edged: -30% Speed, +40% Attack Rate)
+          if (pseudoRand(9) > 0.4) {
+            chunk.grassTiles.push({
+              x: baseX + 230, y: baseY + 230, w: 140, h: 140, isPsychicWell: true
+            });
+          }
+
+        } else if (stage.id === "pallet") {
+          // --- 3. Pallet / Viridian Forest: 1-Way Ledges with Funnel Stair Gaps ---
+          chunk.roads.push({ x: baseX, y: baseY + 265, w: size, h: 70, dir: "H" });
+          if (pseudoRand(1) > 0.35) {
+            chunk.roads.push({ x: baseX + 265, y: baseY, w: 70, h: size, dir: "V" });
+          }
+
+          // 1-Way Jumping Ledges with 60px Funnel Gap for Stairs
+          if (!isCenter && pseudoRand(2) > 0.25) {
+            const ly = baseY + 150 + Math.floor(pseudoRand(4) * 240);
+            chunk.ledges.push({
+              x: baseX + 60,
+              y: ly,
+              w: 200,
+              h: 22
+            });
+            // Stair passage gap at x: baseX + 260 .. 320
+            chunk.ledges.push({
+              x: baseX + 330,
+              y: ly,
+              w: 210,
+              h: 22
+            });
+          }
+
+          for (let i = 0; i < 2; i++) {
+            chunk.grassTiles.push({
+              x: baseX + 50 + Math.floor(pseudoRand(i * 3 + 6) * 140),
+              y: baseY + 60 + Math.floor(pseudoRand(i * 3 + 7) * 140),
+              w: 160, h: 120
+            });
+          }
+
+          if (!isCenter) {
+            const isHouse = pseudoRand(12) > 0.45;
+            chunk.obstacles.push({
+              x: baseX + 90 + Math.floor(pseudoRand(13) * 360),
+              y: baseY + 80 + Math.floor(pseudoRand(14) * 360),
+              w: isHouse ? 94 : 64,
+              h: isHouse ? 84 : 68,
+              kind: isHouse ? "house" : "oak_tree"
+            });
+          }
+
+          for (let i = 0; i < 6; i++) {
+            chunk.decorList.push({
+              x: baseX + 40 + Math.floor(pseudoRand(i * 4 + 20) * (size - 80)),
+              y: baseY + 40 + Math.floor(pseudoRand(i * 4 + 21) * (size - 80)),
+              type: "flower",
+              color: i % 2 === 0 ? "#F87171" : "#F8FAFC"
+            });
+          }
+        }
+
+        this.chunkCache.set(key, chunk);
+        return chunk;
+      },
+
+      /**
+       * ============================================================================
+       * 5. PHYSICS, JUMPING LEDGES & MOB KITING AI
+       * ============================================================================
+       */
+      updatePhysics(dt) {
+        const p = this.player;
+
+        let ix = this.touchInput.active ? this.touchInput.dx : 0;
+        let iy = this.touchInput.active ? this.touchInput.dy : 0;
+
+        if (this.keys["w"] || this.keys["arrowup"]) iy -= 1;
+        if (this.keys["s"] || this.keys["arrowdown"]) iy += 1;
+        if (this.keys["a"] || this.keys["arrowleft"]) ix -= 1;
+        if (this.keys["d"] || this.keys["arrowright"]) ix += 1;
+
+        const len = Math.hypot(ix, iy);
+        if (len > 0.05) {
+          ix /= len;
+          iy /= len;
+          p.facingX = ix >= 0 ? 1 : -1;
+          p.facingY = iy < -0.2 ? -1 : 1;
+          p.walkBob += dt * 14;
+        } else {
+          p.walkBob = 0;
+        }
+
+        if (p.isJumpingLedge) {
+          p.jumpTimer -= dt;
+          p.y += 190 * dt;
+          if (p.jumpTimer <= 0) {
+            p.isJumpingLedge = false;
+            this.spawnDust(p.x, p.y + 12);
+          }
+          return;
+        }
+
+        const terrain = this.getTerrainAt(p.x, p.y);
+        document.getElementById("inspectorTerrain").textContent = terrain.label;
+        document.getElementById("inspectorPos").textContent = `(${Math.round(p.x)}, ${Math.round(p.y)})`;
+        document.getElementById("inspectorChunk").textContent = `[${Math.floor(p.x/600)}, ${Math.floor(p.y/600)}]`;
+
+        const currentSpeed = p.baseSpeed * p.speedMultiplier * terrain.speedMult;
+        p.vx = ix * currentSpeed;
+        p.vy = iy * currentSpeed;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+
+        this.resolveCollisions(p, p.radius);
+
+        if (this.camFollowPlayer) {
+          this.camX += (p.x - this.camX) * Math.min(1, dt * 12);
+          this.camY += (p.y - this.camY) * Math.min(1, dt * 12);
+        }
+
+        this.dummyMobs.forEach(mob => {
+          const dx = p.x - mob.x;
+          const dy = p.y - mob.y;
+          const dist = Math.hypot(dx, dy) || 1;
+          const mobTerrain = this.getTerrainAt(mob.x, mob.y);
+          const mobSpeed = mob.speed * mobTerrain.speedMult;
+
+          mob.vx = (dx / dist) * mobSpeed;
+          mob.vy = (dy / dist) * mobSpeed;
+          mob.x += mob.vx * dt;
+          mob.y += mob.vy * dt;
+          mob.facingX = dx >= 0 ? 1 : -1;
+
+          this.resolveCollisions(mob, mob.radius);
+        });
+
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+          const pt = this.particles[i];
+          pt.x += pt.vx * dt;
+          pt.y += pt.vy * dt;
+          pt.life -= dt;
+          if (pt.life <= 0) this.particles.splice(i, 1);
+        }
+      },
+
+      resolveCollisions(ent, radius) {
+        const cx = Math.floor(ent.x / 600);
+        const cy = Math.floor(ent.y / 600);
+
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            const chunk = this.getBiomeChunk(cx + dx, cy + dy);
+
+            for (const ob of chunk.obstacles) {
+              const nearX = Math.max(ob.x, Math.min(ent.x, ob.x + ob.w));
+              const nearY = Math.max(ob.y, Math.min(ent.y, ob.y + ob.h));
+              const distX = ent.x - nearX;
+              const distY = ent.y - nearY;
+              const distSq = distX * distX + distY * distY;
+              if (distSq < radius * radius) {
+                const d = Math.sqrt(distSq) || 0.001;
+                ent.x += (distX / d) * (radius - d);
+                ent.y += (distY / d) * (radius - d);
+              }
+            }
+
+            for (const ledge of chunk.ledges) {
+              if (ent.x >= ledge.x - 8 && ent.x <= ledge.x + ledge.w + 8) {
+                if (ent === this.player && ent.y >= ledge.y - 12 && ent.y <= ledge.y && ent.vy > 0) {
+                  ent.isJumpingLedge = true;
+                  ent.jumpTimer = 0.22;
+                  this.spawnDust(ent.x, ent.y);
+                } else if (ent.y >= ledge.y && ent.y <= ledge.y + ledge.h + 8 && ent.vy < 0) {
+                  ent.y = ledge.y + ledge.h + 8;
+                }
+              }
+            }
+          }
+        }
+      },
+
+      getTerrainAt(x, y) {
+        const cx = Math.floor(x / 600);
+        const cy = Math.floor(y / 600);
+        const chunk = this.getBiomeChunk(cx, cy);
+
+        // Cerulean Bay: Deep Ocean vs Wooden Boardwalk vs Sandy Islet
+        if (this.currentBiome.id === "cerulean_bay") {
+          // Check if on wooden pier
+          for (const pier of chunk.piers) {
+            if (x >= pier.x && x <= pier.x + pier.w && y >= pier.y && y <= pier.y + pier.h) {
+              return { speedMult: 1.0, label: "木棧道 (正常速)" };
+            }
+          }
+          // Check if on sandy islet
+          for (const isl of chunk.sandIslets) {
+            if (x >= isl.x && x <= isl.x + isl.w && y >= isl.y && y <= isl.y + isl.h) {
+              return { speedMult: 1.0, label: "避難砂島 (安全區 1.0x)" };
+            }
+          }
+          // Otherwise in Deep Water
+          return { speedMult: 0.60, label: "深水浪花減速 (-40%)" };
+        }
+
+        // Sky Pillar: Marble Grand Avenue vs Psychic Wells
+        if (this.currentBiome.id === "sky_pillar") {
+          for (const g of chunk.grassTiles) {
+            if (g.isPsychicWell && x >= g.x && x <= g.x + g.w && y >= g.y && y <= g.y + g.h) {
+              return { speedMult: 0.70, label: "超能重力陣 (-30%速, +40%攻速)" };
+            }
+          }
+          for (const r of chunk.roads) {
+            if (r.isMarble && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+              return { speedMult: 1.10, label: "冠軍大理石大道 (+10%移速)" };
+            }
+          }
+        }
+
+        // Tall Grass in Forest
+        for (const g of chunk.grassTiles) {
+          if (x >= g.x && x <= g.x + g.w && y >= g.y && y <= g.y + g.h) {
+            return { speedMult: 0.75, label: "高草叢減速 (-25%)" };
+          }
+        }
+
+        return { speedMult: 1.0, label: "平地 (1.0x)" };
+      },
+
+      spawnDust(x, y) {
+        for (let i = 0; i < 6; i++) {
+          this.particles.push({
+            x: x + (Math.random() - 0.5) * 16,
+            y: y + (Math.random() - 0.5) * 6,
+            vx: (Math.random() - 0.5) * 35,
+            vy: -15 - Math.random() * 20,
+            size: 2.5 + Math.random() * 2.5,
+            color: "#D97706",
+            life: 0.28
+          });
+        }
+      },
+
+      triggerHopTest() {
+        this.player.isJumpingLedge = true;
+        this.player.jumpTimer = 0.22;
+        this.spawnDust(this.player.x, this.player.y);
+      },
+
+      /**
+       * ============================================================================
+       * 6. RENDERING ENGINE: POLISHED GBA TILES, WATER REEF, STATUES & SHADOWS
+       * ============================================================================
+       */
+      render() {
+        const ctx = this.ctx;
+        ctx.clearRect(0, 0, this.width, this.height);
+
+        const zoom = this.zoom;
+        const camX = this.camX;
+        const camY = this.camY;
+        const toSx = (wx) => (wx - camX) * zoom + this.width / 2;
+        const toSy = (wy) => (wy - camY) * zoom + this.height / 2;
+
+        const stage = this.currentBiome;
+
+        // Base Map Fill
+        ctx.fillStyle = stage.tileLight;
+        ctx.fillRect(0, 0, this.width, this.height);
+
+        // Checkerboard GBA Grid
+        const tileSize = 60 * zoom;
+        const startTx = Math.floor((camX - this.width / (2 * zoom)) / 60) - 1;
+        const endTx = Math.floor((camX + this.width / (2 * zoom)) / 60) + 1;
+        const startTy = Math.floor((camY - this.height / (2 * zoom)) / 60) - 1;
+        const endTy = Math.floor((camY + this.height / (2 * zoom)) / 60) + 1;
+
+        ctx.fillStyle = stage.tileDark;
+        for (let tx = startTx; tx <= endTx; tx++) {
+          for (let ty = startTy; ty <= endTy; ty++) {
+            if (((tx + ty) & 1) === 0) {
+              ctx.fillRect((tx * 60 - camX) * zoom + this.width / 2, (ty * 60 - camY) * zoom + this.height / 2, tileSize, tileSize);
+            }
+          }
+        }
+
+        const startCx = Math.floor((camX - this.width / (2 * zoom)) / 600) - 1;
+        const endCx = Math.floor((camX + this.width / (2 * zoom)) / 600) + 1;
+        const startCy = Math.floor((camY - this.height / (2 * zoom)) / 600) - 1;
+        const endCy = Math.floor((camY + this.height / (2 * zoom)) / 600) + 1;
+        const now = performance.now() * 0.003;
+
+        for (let cx = startCx; cx <= endCx; cx++) {
+          for (let cy = startCy; cy <= endCy; cy++) {
+            const chunk = this.getBiomeChunk(cx, cy);
+
+            // A. Deep Water (Cerulean Bay)
+            chunk.waterTiles.forEach(w => {
+              const sx = toSx(w.x);
+              const sy = toSy(w.y);
+              const sw = w.w * zoom;
+              const sh = w.h * zoom;
+              ctx.fillStyle = stage.waterColor;
+              ctx.fillRect(sx, sy, sw, sh);
+
+              // Wave Crest Ripples
+              ctx.strokeStyle = "rgba(255,255,255,0.45)";
+              ctx.lineWidth = 1.8 * zoom;
+              const waveOff = Math.sin(now + w.x) * (5 * zoom);
+              ctx.beginPath();
+              ctx.moveTo(sx + 20 * zoom + waveOff, sy + sh * 0.35);
+              ctx.lineTo(sx + sw - 20 * zoom + waveOff, sy + sh * 0.35);
+              ctx.moveTo(sx + 35 * zoom - waveOff, sy + sh * 0.7);
+              ctx.lineTo(sx + sw - 35 * zoom - waveOff, sy + sh * 0.7);
+              ctx.stroke();
+            });
+
+            // B. Sandy Islets (Shoreline 9-slice Sand Transition in Cerulean Bay)
+            chunk.sandIslets.forEach(isl => {
+              const ix = toSx(isl.x);
+              const iy = toSy(isl.y);
+              const iw = isl.w * zoom;
+              const ih = isl.h * zoom;
+
+              // Outer wet sand border (Shoreline transition)
+              ctx.fillStyle = "#E0C068";
+              ctx.fillRect(ix - 8 * zoom, iy - 8 * zoom, iw + 16 * zoom, ih + 16 * zoom);
+              // White foam border
+              ctx.strokeStyle = "rgba(255,255,255,0.7)";
+              ctx.lineWidth = 2 * zoom;
+              ctx.strokeRect(ix - 8 * zoom, iy - 8 * zoom, iw + 16 * zoom, ih + 16 * zoom);
+              // Inner Warm Sand Islet
+              ctx.fillStyle = "#F5D77F";
+              ctx.fillRect(ix, iy, iw, ih);
+            });
+
+            // C. Roads & Wooden Boardwalks & Marble Grand Avenue
+            (chunk.roads || []).concat(chunk.piers || []).forEach(r => {
+              const rx = toSx(r.x);
+              const ry = toSy(r.y);
+              const rw = r.w * zoom;
+              const rh = r.h * zoom;
+
+              if (r.isMarble) {
+                // Sky Pillar Grand Marble Avenue
+                ctx.fillStyle = "#E2E8F0";
+                ctx.fillRect(rx, ry, rw, rh);
+                // Golden trim borders
+                ctx.fillStyle = "#F59E0B";
+                ctx.fillRect(rx, ry, 6 * zoom, rh);
+                ctx.fillRect(rx + rw - 6 * zoom, ry, 6 * zoom, rh);
+                // Grid pavers
+                ctx.strokeStyle = "#CBD5E1";
+                ctx.lineWidth = 1.5 * zoom;
+                for (let py = ry; py < ry + rh; py += 30 * zoom) {
+                  ctx.beginPath();
+                  ctx.moveTo(rx, py); ctx.lineTo(rx + rw, py);
+                  ctx.stroke();
+                }
+              } else {
+                ctx.fillStyle = stage.roadColor;
+                ctx.fillRect(rx, ry, rw, rh);
+                ctx.strokeStyle = stage.roadBorder;
+                ctx.lineWidth = 2 * zoom;
+                ctx.strokeRect(rx, ry, rw, rh);
+
+                // Wooden Pilings & Plank Seams for Cerulean Bay
+                if (stage.id === "cerulean_bay") {
+                  ctx.strokeStyle = "rgba(45, 20, 5, 0.45)";
+                  ctx.lineWidth = 1.8 * zoom;
+                  const step = 20 * zoom;
+                  if (r.dir === "V") {
+                    for (let py = ry; py < ry + rh; py += step) {
+                      ctx.beginPath();
+                      ctx.moveTo(rx, py); ctx.lineTo(rx + rw, py);
+                      ctx.stroke();
+                    }
+                  } else {
+                    for (let px = rx; px < rx + rw; px += step) {
+                      ctx.beginPath();
+                      ctx.moveTo(px, ry); ctx.lineTo(px, ry + rh);
+                      ctx.stroke();
+                    }
+                  }
+                }
+              }
+            });
+
+            // D. Rotating Psychic Gravity Wells (Sky Pillar) & Tall Grass
+            chunk.grassTiles.forEach(g => {
+              const gx = toSx(g.x);
+              const gy = toSy(g.y);
+              const gw = g.w * zoom;
+              const gh = g.h * zoom;
+
+              if (g.isPsychicWell) {
+                // Rotating Cosmic Psychic Circle
+                ctx.save();
+                ctx.fillStyle = "rgba(147, 51, 234, 0.35)";
+                ctx.fillRect(gx, gy, gw, gh);
+                ctx.strokeStyle = "#C084FC";
+                ctx.lineWidth = 2.5 * zoom;
+                ctx.strokeRect(gx, gy, gw, gh);
+
+                // Inner rotating rune circle
+                const cx = gx + gw / 2;
+                const cy = gy + gh / 2;
+                ctx.translate(cx, cy);
+                ctx.rotate(now * 1.5);
+                ctx.strokeStyle = "rgba(250, 204, 21, 0.85)";
+                ctx.lineWidth = 2 * zoom;
+                ctx.beginPath();
+                ctx.arc(0, 0, gw * 0.38, 0, Math.PI * 2);
+                ctx.stroke();
+                // 4 rune nodes
+                for (let k = 0; k < 4; k++) {
+                  const ang = (k * Math.PI) / 2;
+                  ctx.fillStyle = "#FACC15";
+                  ctx.fillRect(Math.cos(ang) * gw * 0.38 - 3 * zoom, Math.sin(ang) * gw * 0.38 - 3 * zoom, 6 * zoom, 6 * zoom);
+                }
+                ctx.restore();
+              } else {
+                ctx.fillStyle = stage.slowZoneColor;
+                ctx.beginPath();
+                ctx.roundRect(gx, gy, gw, gh, 8 * zoom);
+                ctx.fill();
+                ctx.strokeStyle = "rgba(0,0,0,0.25)";
+                ctx.lineWidth = 1.8 * zoom;
+                ctx.stroke();
+
+                ctx.strokeStyle = "#4ADE80";
+                ctx.lineWidth = 1.5 * zoom;
+                for (let px = gx + 12 * zoom; px < gx + gw - 8 * zoom; px += 22 * zoom) {
+                  for (let py = gy + 14 * zoom; py < gy + gh - 8 * zoom; py += 22 * zoom) {
+                    ctx.beginPath();
+                    ctx.moveTo(px, py); ctx.lineTo(px - 3 * zoom, py - 6 * zoom);
+                    ctx.moveTo(px, py); ctx.lineTo(px + 3 * zoom, py - 6 * zoom);
+                    ctx.stroke();
+                  }
+                }
+              }
+            });
+
+            // E. 1-Way Jumping Ledges
+            chunk.ledges.forEach(l => {
+              const lx = toSx(l.x);
+              const ly = toSy(l.y);
+              const lw = l.w * zoom;
+              const lh = l.h * zoom;
+
+              ctx.fillStyle = "#B45309";
+              ctx.fillRect(lx, ly, lw, lh * 0.45);
+              ctx.fillStyle = "#78350F";
+              ctx.fillRect(lx, ly + lh * 0.45, lw, lh * 0.55);
+              ctx.strokeStyle = "#451A03";
+              ctx.lineWidth = 1.8 * zoom;
+              ctx.strokeRect(lx, ly, lw, lh);
+
+              // Downward Chevron Prompts
+              ctx.fillStyle = "#FDE68A";
+              for (let px = lx + 20 * zoom; px < lx + lw - 10 * zoom; px += 36 * zoom) {
+                ctx.beginPath();
+                ctx.moveTo(px - 5 * zoom, ly + 3 * zoom);
+                ctx.lineTo(px + 5 * zoom, ly + 3 * zoom);
+                ctx.lineTo(px, ly + 13 * zoom);
+                ctx.closePath();
+                ctx.fill();
+              }
+            });
+
+            // F. Solid Obstacles (Houses, Oaks, Symmetrical Colossal Statues, Reefs)
+            chunk.obstacles.forEach(ob => {
+              const ox = toSx(ob.x);
+              const oy = toSy(ob.y);
+              const ow = ob.w * zoom;
+              const oh = ob.h * zoom;
+
+              ctx.fillStyle = "rgba(0,0,0,0.3)";
+              ctx.fillRect(ox + 4 * zoom, oy + 6 * zoom, ow, oh);
+
+              if (ob.kind === "pillar") {
+                // Symmetrical Colossal Ancient Stone Guardian Statue with Luminous Eyes
+                ctx.fillStyle = "#475569";
+                ctx.fillRect(ox, oy + 18 * zoom, ow, oh - 18 * zoom);
+                ctx.strokeStyle = "#1E293B";
+                ctx.lineWidth = 2 * zoom;
+                ctx.strokeRect(ox, oy + 18 * zoom, ow, oh - 18 * zoom);
+
+                // Statue Head
+                ctx.fillStyle = "#64748B";
+                ctx.beginPath();
+                ctx.arc(ox + ow / 2, oy + 14 * zoom, 16 * zoom, 0, Math.PI * 2);
+                ctx.fill(); ctx.stroke();
+
+                // Luminous Golden Eyes (Glowing in night/dusk)
+                const tod = this.getTimeOfDay();
+                ctx.fillStyle = (tod.label.includes("Night") || tod.label.includes("Sunset")) ? "#FDE047" : "#F59E0B";
+                ctx.fillRect(ox + ow / 2 - 7 * zoom, oy + 11 * zoom, 4 * zoom, 4 * zoom);
+                ctx.fillRect(ox + ow / 2 + 3 * zoom, oy + 11 * zoom, 4 * zoom, 4 * zoom);
+
+              } else if (ob.kind === "reef") {
+                // Coastal Reef with pink coral accent
+                ctx.fillStyle = "#334155";
+                ctx.beginPath();
+                ctx.arc(ox + ow / 2, oy + oh / 2, ow * 0.45, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#FB7185";
+                ctx.beginPath();
+                ctx.arc(ox + ow * 0.38, oy + oh * 0.38, 7 * zoom, 0, Math.PI * 2);
+                ctx.fill();
+
+              } else if (ob.kind === "house") {
+                ctx.fillStyle = "#FEF3C7";
+                ctx.strokeStyle = "#1E293B";
+                ctx.lineWidth = 2.5 * zoom;
+                ctx.fillRect(ox, oy + oh * 0.35, ow, oh * 0.65);
+                ctx.strokeRect(ox, oy + oh * 0.35, ow, oh * 0.65);
+                ctx.fillStyle = "#DC2626";
+                ctx.beginPath();
+                ctx.moveTo(ox - 4 * zoom, oy + oh * 0.38);
+                ctx.lineTo(ox + ow / 2, oy);
+                ctx.lineTo(ox + ow + 4 * zoom, oy + oh * 0.38);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke();
+                ctx.fillStyle = "#92400E";
+                ctx.fillRect(ox + ow * 0.2, oy + oh * 0.55, ow * 0.22, oh * 0.45);
+
+              } else if (ob.kind === "oak_tree") {
+                ctx.fillStyle = "#78350F";
+                ctx.fillRect(ox + ow * 0.38, oy + oh * 0.55, ow * 0.24, oh * 0.45);
+                ctx.fillStyle = "#15803D";
+                ctx.beginPath();
+                ctx.arc(ox + ow / 2, oy + oh * 0.42, ow * 0.46, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#22C55E";
+                ctx.beginPath();
+                ctx.arc(ox + ow * 0.44, oy + oh * 0.34, ow * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            });
+
+            // G. Micro-decorations (Starfish & Shells)
+            chunk.decorList.forEach(d => {
+              const dx = toSx(d.x);
+              const dy = toSy(d.y);
+              ctx.save();
+              ctx.translate(dx, dy);
+              if (d.type === "starfish") {
+                ctx.fillStyle = "#FB7185";
+                ctx.beginPath();
+                ctx.arc(0, 0, 4.5 * zoom, 0, Math.PI * 2);
+                ctx.fill();
+              } else if (d.type === "shell") {
+                ctx.fillStyle = "#FDE68A";
+                ctx.beginPath();
+                ctx.arc(0, 0, 4 * zoom, 0, Math.PI);
+                ctx.fill();
+              } else {
+                ctx.fillStyle = d.color || "#F87171";
+                const ps = 2.5 * zoom;
+                ctx.fillRect(-ps, -ps * 2, ps * 2, ps * 2);
+                ctx.fillRect(-ps, ps * 0.5, ps * 2, ps * 2);
+                ctx.fillRect(-ps * 2, -ps, ps * 2, ps * 2);
+                ctx.fillRect(ps * 0.5, -ps, ps * 2, ps * 2);
+                ctx.fillStyle = "#FACC15";
+                ctx.fillRect(-ps, -ps, ps * 2, ps * 2);
+              }
+              ctx.restore();
+            });
+
+            // Wireframe Debugger
+            if (this.showWireframes) {
+              ctx.save();
+              ctx.lineWidth = 1.5;
+              ctx.strokeStyle = "#EF4444";
+              chunk.obstacles.forEach(ob => ctx.strokeRect(toSx(ob.x), toSy(ob.y), ob.w * zoom, ob.h * zoom));
+              ctx.strokeStyle = "#FACC15";
+              chunk.ledges.forEach(l => ctx.strokeRect(toSx(l.x), toSy(l.y), l.w * zoom, l.h * zoom));
+              ctx.strokeStyle = "rgba(74, 222, 128, 0.35)";
+              ctx.strokeRect(toSx(chunk.baseX), toSy(chunk.baseY), 600 * zoom, 600 * zoom);
+              ctx.restore();
+            }
+          }
+        }
+
+        // --- Drifting Cloud Shadows ---
+        if (this.cloudDensity > 0.05) {
+          ctx.save();
+          const todInfo = this.getTimeOfDay();
+          ctx.fillStyle = `rgba(15, 23, 42, ${0.15 * this.cloudDensity * (todInfo.shadowAlpha / 0.18)})`;
+          this.clouds.forEach(c => {
+            c.x += c.speed * 0.016;
+            c.y += c.speed * 0.008;
+            if (c.x > camX + 1800) c.x -= 3600;
+            if (c.y > camY + 1800) c.y -= 3600;
+
+            const csx = toSx(c.x);
+            const csy = toSy(c.y);
+            const csw = c.w * zoom;
+            const csh = c.h * zoom;
+
+            ctx.beginPath();
+            ctx.arc(csx, csy, csh * 0.55, 0, Math.PI * 2);
+            ctx.arc(csx + csw * 0.3, csy - csh * 0.15, csh * 0.5, 0, Math.PI * 2);
+            ctx.arc(csx - csw * 0.3, csy + csh * 0.1, csh * 0.45, 0, Math.PI * 2);
+            ctx.fill();
+          });
+          ctx.restore();
+        }
+
+        // --- Dummy Mobs (Kiting Simulation) ---
+        this.dummyMobs.forEach(mob => {
+          const msx = toSx(mob.x);
+          const msy = toSy(mob.y);
+          const spr = SpriteLoader.get(mob.sprite);
+          if (spr.loaded && !spr.fallback) {
+            ctx.save();
+            ctx.translate(msx, msy);
+            if (mob.facingX > 0) ctx.scale(-1, 1);
+            ctx.drawImage(spr.img, -20 * zoom, -20 * zoom, 40 * zoom, 40 * zoom);
+            ctx.restore();
+          } else {
+            drawProceduralSprite(ctx, msx, msy, "mob", 38 * zoom, mob.facingX);
+          }
+          if (this.showWireframes) {
+            ctx.strokeStyle = "#F87171";
+            ctx.beginPath();
+            ctx.arc(msx, msy, mob.radius * zoom, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        });
+
+        // --- Player ---
+        const p = this.player;
+        const psx = toSx(p.x);
+        const psy = toSy(p.y) - (p.isJumpingLedge ? 12 * zoom : 0);
+        const pSpr = SpriteLoader.get(SPRITE_URLS.player);
+        if (pSpr.loaded && !pSpr.fallback) {
+          ctx.save();
+          ctx.translate(psx, psy);
+          if (p.facingX > 0) ctx.scale(-1, 1);
+          ctx.drawImage(pSpr.img, -24 * zoom, -24 * zoom, 48 * zoom, 48 * zoom);
+          ctx.restore();
+        } else {
+          drawProceduralSprite(ctx, psx, psy, "player", 44 * zoom, p.facingX);
+        }
+
+        if (this.showWireframes) {
+          ctx.strokeStyle = "#38BDF8";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(psx, psy, p.radius * zoom, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // --- Particles ---
+        this.particles.forEach(pt => {
+          ctx.fillStyle = pt.color;
+          ctx.beginPath();
+          ctx.arc(toSx(pt.x), toSy(pt.y), pt.size * zoom, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // --- Time of Day Ambient Tint ---
+        const tod = this.getTimeOfDay();
+        if (tod.tint) {
+          ctx.save();
+          ctx.fillStyle = tod.tint;
+          ctx.fillRect(0, 0, this.width, this.height);
+          ctx.restore();
+        }
+      },
+
+      getTimeOfDay() {
+        const sec = this.timeOfDaySec % 900;
+        if (sec < 200) {
+          return { label: "清晨晨曦 (Dawn)", tint: "rgba(125, 211, 252, 0.12)", shadowAlpha: 0.14 };
+        } else if (sec < 550) {
+          return { label: "正午陽光 (Noon)", tint: "rgba(255, 255, 255, 0.02)", shadowAlpha: 0.18 };
+        } else if (sec < 780) {
+          return { label: "黃昏夕陽 (Sunset)", tint: "rgba(249, 115, 22, 0.18)", shadowAlpha: 0.22 };
+        } else {
+          return { label: "夜幕星光 (Midnight)", tint: "rgba(15, 23, 42, 0.38)", shadowAlpha: 0.12 };
+        }
+      },
+
+      loop(timestamp) {
+        const dt = Math.min(0.05, (timestamp - this.lastTime) / 1000 || 0.016);
+        this.lastTime = timestamp;
+
+        this.updatePhysics(dt);
+        this.render();
+
+        requestAnimationFrame((t) => this.loop(t));
+      },
+
+      switchBiome(biomeKey) {
+        this.currentBiome = BIOMES[biomeKey] || BIOMES.cerulean_bay;
+        this.chunkCache.clear();
+
+        document.getElementById("inspectorBiomeTitle").textContent = this.currentBiome.name;
+        document.getElementById("biomeFeatureTag").textContent = this.currentBiome.tag;
+
+        ["btnBiomeCerulean", "btnBiomeSky", "btnBiomePallet"].forEach(id => {
+          document.getElementById(id).className = "py-1.5 px-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-300";
+        });
+        const activeMap = { cerulean_bay: "btnBiomeCerulean", sky_pillar: "btnBiomeSky", pallet: "btnBiomePallet" };
+        document.getElementById(activeMap[biomeKey]).className = "py-1.5 px-2 rounded-lg border border-blue-500 bg-blue-600 text-white shadow";
+      },
+
+      setTimeOfDay(val) {
+        this.timeOfDaySec = parseInt(val, 10);
+        document.getElementById("timeOfDayLabel").textContent = this.getTimeOfDay().label;
+      },
+
+      setCloudDensity(val) {
+        this.cloudDensity = parseInt(val, 10) / 100;
+        document.getElementById("cloudDensityLabel").textContent = `${val}%`;
+      },
+
+      setZoom(val) {
+        this.zoom = Math.max(0.3, Math.min(2.5, parseInt(val, 10) / 100));
+        document.getElementById("zoomDisplay").textContent = `${this.zoom.toFixed(2)}x`;
+        document.getElementById("zoomSlider").value = Math.round(this.zoom * 100);
+      },
+
+      toggleCamMode() {
+        this.camFollowPlayer = !this.camFollowPlayer;
+        document.getElementById("camModeText").textContent = this.camFollowPlayer ? "跟隨玩家" : "自由視角";
+        if (this.camFollowPlayer) {
+          this.camX = this.player.x;
+          this.camY = this.player.y;
+        }
+      },
+
+      cyclePlayerSpeed() {
+        const speeds = [1.0, 2.0, 4.0];
+        const curIdx = speeds.indexOf(this.player.speedMultiplier);
+        const nextIdx = (curIdx + 1) % speeds.length;
+        this.player.speedMultiplier = speeds[nextIdx];
+        document.getElementById("speedMultiplierText").textContent = `${this.player.speedMultiplier}x 速`;
+      },
+
+      toggleWireframes() {
+        this.showWireframes = !this.showWireframes;
+        document.getElementById("btnWireframe").className = `px-2.5 py-1.5 rounded-lg border ${this.showWireframes ? 'border-red-500 bg-red-950/80 text-red-300' : 'border-slate-700 bg-slate-800 text-slate-300'}`;
+        document.getElementById("btnWireframe").innerHTML = `<i class="fa-solid fa-draw-polygon text-red-400"></i> <span>碰撞紅框: ${this.showWireframes ? '開' : '關'}</span>`;
+      },
+
+      spawnDummyMobs(count = 15) {
+        const isWater = this.currentBiome.id === "cerulean_bay";
+        const spr = isWater ? SPRITE_URLS.dummyMobWater : SPRITE_URLS.dummyMob;
+        for (let i = 0; i < count; i++) {
+          const ang = Math.random() * Math.PI * 2;
+          const dist = 220 + Math.random() * 260;
+          this.dummyMobs.push({
+            x: this.player.x + Math.cos(ang) * dist,
+            y: this.player.y + Math.sin(ang) * dist,
+            vx: 0, vy: 0,
+            facingX: -1,
+            speed: 55 + Math.random() * 25,
+            radius: 16,
+            sprite: spr
+          });
+        }
+      },
+
+      clearDummyMobs() {
+        this.dummyMobs = [];
+      },
+
+      toggleDock() {
+        const dock = document.getElementById("sandboxDock");
+        dock.classList.toggle("hidden");
+      }
+    };
+
+    window.addEventListener("DOMContentLoaded", () => SandboxApp.init());
+  </script>
+</body>
+</html>
