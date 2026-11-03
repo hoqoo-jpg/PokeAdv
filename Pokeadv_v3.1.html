@@ -824,7 +824,13 @@
         name: "小智 (Ash)",
         title: "真新鎮熱血主角 (預設)",
         cost: 0,
-        sprite: "https://play.pokemonshowdown.com/sprites/trainers/ash.png",
+        sprite: "images/Ash_01.png", // 預設或選單頭像使用正面
+        sprites: {
+          down: "images/Ash_01.png",  // 正面 (向下)
+          up: "images/Ash_02.png",    // 背面 (向上)
+          left: "images/Ash_03.png",  // 左側 (向左)
+          right: "images/Ash_04.png"  // 右側 (向右)
+        },
         skillName: "就決定是你了！",
         skillCd: 45,
         bondName: "真新鎮的奇蹟",
@@ -1395,7 +1401,13 @@
       runAssetPreloader() {
         const urls = new Set();
         Object.values(ITEM_SPRITES).forEach(u => urls.add(u));
-        TRAINERS.forEach(t => urls.add(t.sprite));
+        //TRAINERS.forEach(t => urls.add(t.sprite));
+        TRAINERS.forEach(t => {
+          urls.add(t.sprite);
+          if (t.sprites) {
+            Object.values(t.sprites).forEach(u => urls.add(u));
+          }
+        });
         POKEMON_DB.forEach(p => {
           urls.add(p.forward_sprite);
           urls.add(p.back_sprite);
@@ -2322,8 +2334,10 @@
           x: 26,
           y: 8,
           facingX: -1,
+          facingY: 1, // 預設朝下 (正面)
           walkBob: 0,
           sprite: tr.sprite,
+          sprites: tr.sprites || null,
           name: tr.name,
           pixelColors: tr.pixelColors
         };
@@ -2641,10 +2655,23 @@
 
         const targetTx = p.x - p.facingX * 26;
         const targetTy = p.y;
-        this.trainerCompanion.x += (targetTx - this.trainerCompanion.x) * Math.min(1, dt * 11.5);
-        this.trainerCompanion.y += (targetTy - this.trainerCompanion.y) * Math.min(1, dt * 11.5);
+        
+        / 計算訓練家當前的移動向量與朝向
+        const tDiffX = targetTx - this.trainerCompanion.x;
+        const tDiffY = targetTy - this.trainerCompanion.y;
+        
+        this.trainerCompanion.x += tDiffX * Math.min(1, dt * 11.5);
+        this.trainerCompanion.y += tDiffY * Math.min(1, dt * 11.5);
+        
+        // 優先跟隨玩家主要行進方向
         this.trainerCompanion.facingX = p.facingX;
+        this.trainerCompanion.facingY = p.facingY;
         this.trainerCompanion.walkBob = p.walkBob;
+        
+        //this.trainerCompanion.x += (targetTx - this.trainerCompanion.x) * Math.min(1, dt * 11.5);
+        //this.trainerCompanion.y += (targetTy - this.trainerCompanion.y) * Math.min(1, dt * 11.5);
+        //this.trainerCompanion.facingX = p.facingX;
+        //this.trainerCompanion.walkBob = p.walkBob;
 
         this.partnerOrbitBase += dt * 2.1;
         const upgPartnerMult = 1 + (this.saveData.upgrades.partner || 0) * 0.18;
@@ -4730,6 +4757,24 @@ if (pr.isEnemy) {
           const tsx = toScreenX(this.trainerCompanion.x);
           const tsy = toScreenY(this.trainerCompanion.y);
           const bob = Math.abs(Math.sin(this.trainerCompanion.walkBob)) * 3.5;
+          // 決定使用哪個方向的精靈圖
+          let activeSpriteUrl = tc.sprite;
+          let needFlipX = false;
+
+          if (tc.sprites) {
+            if (tc.facingY < 0) {
+              activeSpriteUrl = tc.sprites.up;    // 向上走：背面 (Ash_02)
+            } else if (tc.facingY > 0 && Math.abs(tc.facingX) < 0.2) {
+              activeSpriteUrl = tc.sprites.down;  // 向下走：正面 (Ash_01)
+            } else if (tc.facingX < 0) {
+              activeSpriteUrl = tc.sprites.left;  // 向左走：左側 (Ash_03)
+            } else {
+              activeSpriteUrl = tc.sprites.right; // 向右走：右側 (Ash_04)
+            }
+          } else {
+            // 沒有多方向精靈圖的訓練員，沿用水平翻轉
+            needFlipX = tc.facingX > 0;
+          }
           const tRec = SpriteCache.get(this.trainerCompanion.sprite);
 
           ctx.save();
