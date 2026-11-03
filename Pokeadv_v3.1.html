@@ -4626,7 +4626,7 @@
         const playerSprUrl = p.facingY < 0 ? p.data.back_sprite : p.data.forward_sprite;
         const pRec = SpriteCache.get(playerSprUrl);
         if (pRec && pRec.loaded) {
-          ctx.translate(px, py - pBob);
+          ctx.translate(px, py - pBob + 8);
           if (p.facingX > 0) ctx.scale(-1, 1);
           if (p.isShiny) ctx.filter = "hue-rotate(48deg) saturate(1.75) brightness(1.12)";
           ctx.drawImage(pRec.img, -26, -26, 52, 52);
@@ -4653,8 +4653,8 @@
           const eSprUrl = e.facingY < 0 ? e.data.back_sprite : e.data.forward_sprite;
           const eRec = SpriteCache.get(eSprUrl);
           //const sz = e.isBoss ? 80 : (e.isElite || e.treasureType ? 56 : 42);
-          // 放大後的尺寸（小怪從 42 改為 52，精英從 56 改為 70，Boss 從 80 改為 96）：
-          const sz = e.isBoss ? 96 : (e.isElite || e.treasureType ? 70 : 52);
+          // 放大後的尺寸（小怪從 42 改為 64，精英從 56 改為 88，Boss 從 80 改為 120）：
+          const sz = e.isBoss ? 120 : (e.isElite || e.treasureType ? 88 : 64);
           if (eRec && eRec.loaded) {
             ctx.save();
             ctx.translate(esx, esy);
