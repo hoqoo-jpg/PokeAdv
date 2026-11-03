@@ -2640,7 +2640,7 @@
         this.resolveObstacleCollision(p, 18);
 
         const targetTx = p.x - p.facingX * 26;
-        const targetTy = p.y + 8;
+        const targetTy = p.y;
         this.trainerCompanion.x += (targetTx - this.trainerCompanion.x) * Math.min(1, dt * 11.5);
         this.trainerCompanion.y += (targetTy - this.trainerCompanion.y) * Math.min(1, dt * 11.5);
         this.trainerCompanion.facingX = p.facingX;
@@ -3381,6 +3381,27 @@
           e.x += vx * dt;
           e.y += vy * dt;
 
+          // === 新增：怪與怪之間的排斥防重疊 ===
+          if (!e.isBoss) {
+            for (let j = 0; j < this.enemies.length; j++) {
+              if (i === j) continue;
+              const other = this.enemies[j];
+              const sepDx = e.x - other.x;
+              const sepDy = e.y - other.y;
+              const minDist = (e.radius + other.radius) * 0.95;
+              const sepDistSq = sepDx * sepDx + sepDy * sepDy;
+
+              if (sepDistSq > 0 && sepDistSq < minDist * minDist) {
+                const sepDist = Math.sqrt(sepDistSq);
+                const overlap = minDist - sepDist;
+                const weight = other.isBoss ? 1.0 : 0.5;
+                e.x += (sepDx / sepDist) * overlap * weight * 0.35;
+                e.y += (sepDy / sepDist) * overlap * weight * 0.35;
+              }
+            }
+          }
+          // ====================================
+
           if (Math.abs(vx) > 2) e.facingX = vx >= 0 ? 1 : -1;
           e.facingY = vy < -8 ? -1 : 1;
 
@@ -3463,6 +3484,7 @@
               skillId: "BossBullet",
               vfx: "fire_stream",
               homing: false,
+              isEnemy: true,
               color: "#EF4444",
               pierce: 1,
               life: 2.5,
@@ -3489,6 +3511,7 @@
               skillId: "BossRing",
               vfx: "ice_crystal",
               homing: false,
+              isEnemy: true,
               color: "#38BDF8",
               pierce: 1,
               life: 3.0,
@@ -3512,6 +3535,7 @@
             skillId: "BossHoming",
             vfx: "shadow_orb",
             homing: true, // 開啟追蹤玩家特性
+            isEnemy: true,
             color: "#C084FC",
             pierce: 1,
             life: 3.2,
@@ -3707,15 +3731,25 @@
             pr.vy = Math.sin(curAng) * spd;
             pr.angle = curAng;
           } else if (pr.homing) {
-            const target = this.findNearestEnemyInViewport(pr.x, pr.y, 380);
-            if (target) {
-              const desired = Math.atan2(target.y - pr.y, target.x - pr.x);
-              const spd = Math.hypot(pr.vx, pr.vy);
-              pr.vx = pr.vx * 0.90 + Math.cos(desired) * spd * 0.10;
-              pr.vy = pr.vy * 0.90 + Math.sin(desired) * spd * 0.10;
-              pr.angle = Math.atan2(pr.vy, pr.vx);
-            }
-          }
+  if (pr.isEnemy) {
+    // 敵方追蹤彈：追蹤玩家
+    const desired = Math.atan2(this.player.y - pr.y, this.player.x - pr.x);
+    const spd = Math.hypot(pr.vx, pr.vy);
+    pr.vx = pr.vx * 0.92 + Math.cos(desired) * spd * 0.08;
+    pr.vy = pr.vy * 0.92 + Math.sin(desired) * spd * 0.08;
+    pr.angle = Math.atan2(pr.vy, pr.vx);
+  } else {
+    // 玩家追蹤彈：追蹤敵人群
+    const target = this.findNearestEnemyInViewport(pr.x, pr.y, 380);
+    if (target) {
+      const desired = Math.atan2(target.y - pr.y, target.x - pr.x);
+      const spd = Math.hypot(pr.vx, pr.vy);
+      pr.vx = pr.vx * 0.90 + Math.cos(desired) * spd * 0.10;
+      pr.vy = pr.vy * 0.90 + Math.sin(desired) * spd * 0.10;
+      pr.angle = Math.atan2(pr.vy, pr.vx);
+    }
+  }
+}
 
           pr.x += pr.vx * dt;
           pr.y += pr.vy * dt;
@@ -3753,17 +3787,41 @@
             });
           }
 
-          for (let j = this.enemies.length - 1; j >= 0; j--) {
-            const e = this.enemies[j];
-            if (pr.hitSet.has(e)) continue;
-            if (Math.hypot(e.x - pr.x, e.y - pr.y) <= pr.radius + e.radius) {
-              pr.hitSet.add(e);
-              this.dealDamageToEnemy(e, pr.dmg, pr.type, pr.statusBonus, pr.vfx === "giant_fist" ? 48 : 24);
-              this.spawnParticleCluster(pr.x, pr.y, pr.color, "#FFFFFF", 7, "star", 0.75);
-              pr.pierce -= 1;
-              if (pr.pierce <= 0) break;
-            }
-          }
+          f// 檢測敵方子彈是否命中玩家
+if (pr.isEnemy) {
+  const p = this.player;
+  if (!pr.hitSet.has(p) && Math.hypot(p.x - pr.x, p.y - pr.y) <= pr.radius + 16) {
+    pr.hitSet.add(p);
+    if (p.invulnTimer <= 0) {
+      const shieldMult = p.shieldTimer > 0 ? 0.5 : 1.0;
+      const dmg = Math.max(1, Math.round(pr.dmg * shieldMult));
+      p.hp -= dmg;
+      p.invulnTimer = 0.45;
+      this.inflictStatusOnPlayer(pr.type);
+      this.spawnFloatingText(p.x, p.y - 20, `-${dmg}`, "#EF4444", 14);
+      SoundFX.play("hit");
+      if (p.hp <= 0) {
+        p.hp = 0;
+        this.triggerGameOver(false);
+        return;
+      }
+    }
+    pr.pierce -= 1;
+  }
+} else {
+  // 原本的檢測敵人邏輯保持不變（只有玩家子彈才打怪）
+  for (let j = this.enemies.length - 1; j >= 0; j--) {
+    const e = this.enemies[j];
+    if (pr.hitSet.has(e)) continue;
+    if (Math.hypot(e.x - pr.x, e.y - pr.y) <= pr.radius + e.radius) {
+      pr.hitSet.add(e);
+      this.dealDamageToEnemy(e, pr.dmg, pr.type, pr.statusBonus, pr.vfx === "giant_fist" ? 48 : 24);
+      this.spawnParticleCluster(pr.x, pr.y, pr.color, "#FFFFFF", 7, "star", 0.75);
+      pr.pierce -= 1;
+      if (pr.pierce <= 0) break;
+    }
+  }
+}
 
           if (pr.life <= 0 || pr.pierce <= 0) {
             this.projectiles.splice(i, 1);
@@ -4738,7 +4796,7 @@
         const playerSprUrl = p.facingY < 0 ? p.data.back_sprite : p.data.forward_sprite;
         const pRec = SpriteCache.get(playerSprUrl);
         if (pRec && pRec.loaded) {
-          ctx.translate(px, py - pBob + 8);
+          ctx.translate(px, py - pBob);
           if (p.facingX > 0) ctx.scale(-1, 1);
           if (p.isShiny) ctx.filter = "hue-rotate(48deg) saturate(1.75) brightness(1.12)";
           ctx.drawImage(pRec.img, -26, -26, 52, 52);
