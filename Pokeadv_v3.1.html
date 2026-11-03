@@ -527,6 +527,14 @@
             <p class="text-[11px] text-red-100 truncate">點擊卡片可切換正面與背面預覽！登錄即可領取賞金！</p>
           </div>
         </div>
+        <!-- 新增一鍵領取按鈕與關閉按鈕 -->
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="GameApp.claimAllPokedexRewards()" class="poke-btn-yellow px-3 py-1.5 text-xs font-black whitespace-nowrap">
+            <i class="fa-solid fa-coins"></i> 一鍵領取全部賞金
+          </button>
+          <button onclick="GameApp.closePokedexModal()" class="poke-btn-white px-3.5 py-1.5 text-xs font-black whitespace-nowrap">✕ 關閉</button>
+        </div>
+      </div>
         <button onclick="GameApp.closePokedexModal()" class="poke-btn-white px-3.5 py-1.5 text-xs font-black shrink-0 whitespace-nowrap">✕ 關閉</button>
       </div>
       <div id="pokedexGrid" class="p-3 sm:p-4 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 bg-slate-50 flex-1 auto-rows-max"></div>
