@@ -5125,7 +5125,7 @@
           const alpha = Math.min(1, this.bossIntroCineTimer);
           ctx.save();
           ctx.globalAlpha = alpha;
-          ctx.fillStyle = "rgba(15, 23, 42, 0.82)";
+          /*ctx.fillStyle = "rgba(15, 23, 42, 0.82)";
           ctx.fillRect(0, this.height * 0.24 - 28, this.width, 56);
           ctx.strokeStyle = this.bossIntroCineColor;
           ctx.lineWidth = 3;
@@ -5137,7 +5137,27 @@
           ctx.font = "900 20px 'Noto Sans TC', sans-serif";
           ctx.textAlign = "center";
           ctx.fillStyle = this.bossIntroCineColor;
-          ctx.fillText(`WARNING ‧ ${this.bossIntroCineTitle}`, this.width / 2, this.height * 0.24 + 7);
+          ctx.fillText(`WARNING ‧ ${this.bossIntroCineTitle}`, this.width / 2, this.height * 0.24 + 7);*/
+          // 放大上方警告橫條的的高度以容納兩行字
+          ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+          ctx.fillRect(0, this.height * 0.22 - 38, this.width, 76);
+          ctx.strokeStyle = this.bossIntroCineColor;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(0, this.height * 0.22 - 38); ctx.lineTo(this.width, this.height * 0.22 - 38);
+          ctx.moveTo(0, this.height * 0.22 + 38); ctx.lineTo(this.width, this.height * 0.22 + 38);
+          ctx.stroke();
+
+          // 第一行：警告標題
+          ctx.font = "900 18px 'Noto Sans TC', sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillStyle = this.bossIntroCineColor;
+          ctx.fillText(`WARNING ‧ ${this.bossIntroCineTitle}`, this.width / 2, this.height * 0.22 - 8);
+
+          // 第二行：加入天象劇變詳細說明
+          ctx.font = "700 12px 'Noto Sans TC', sans-serif";
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fillText("天象劇變！注意地面紅圈與屬性異常攻擊，善用隨行戰術技應戰！", this.width / 2, this.height * 0.22 + 16);
           ctx.restore();
         }
       },
