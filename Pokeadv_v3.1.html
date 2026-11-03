@@ -2620,6 +2620,7 @@ if (ilen > 0.05) {
     // 左右移動為主：更新左右朝向，並清空上下朝向
     p.facingX = ix >= 0 ? 1 : -1;
     p.facingY = 0;
+    p.lastFacingX = p.facingX; // 記錄最後的左右面向
   } else {
     // 上下移動為主：更新上下朝向，並清空左右朝向
     p.facingY = iy < 0 ? -1 : 1;
@@ -2662,8 +2663,11 @@ if (ilen > 0.05) {
         p.y += p.vy * dt;
         this.resolveObstacleCollision(p, 18);
 
-        const targetTx = p.x - p.facingX * 26;
-        const targetTy = p.y;
+        // 確保即使上下移動，訓練員也保持在側後方（固定一個最後面向的左右偏移量）
+        const sideOffset = (p.facingX !== 0 ? p.facingX : (p.lastFacingX || -1)) * 28;
+        const targetTx = p.x - sideOffset;
+        // 上下移動時稍微錯開 Y 軸，避免上下重疊
+        const targetTy = p.y + (p.facingY < 0 ? 12 : -8);
         
         // 計算訓練家當前的移動向量與朝向
         const tDiffX = targetTx - this.trainerCompanion.x;
