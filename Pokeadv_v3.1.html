@@ -3394,6 +3394,7 @@
             if (e.rangedCd <= 0) {
               e.rangedCd = e.isBoss ? 2.5 : 4.2;
               this.spawnEnemyTelegraphAttack(e);
+              this.spawnBossBulletHellAttack(e);
             }
           }
 
@@ -3437,6 +3438,90 @@
           moveType: enemy.data.type1,
           isBoss: enemy.isBoss
         });
+      },
+
+      spawnBossBulletHellAttack(enemy) {
+        const p = this.player;
+        const angToPlayer = Math.atan2(p.y - enemy.y, p.x - enemy.x);
+        
+        // 隨機選擇一種彈幕模式：0 = 線性子彈, 1 = 環形彈幕, 2 = 追蹤光束
+        const mode = Math.floor(Math.random() * 3);
+
+        if (mode === 0) {
+          // 1. 線性子彈（扇形三連發彈幕）
+          for (let i = -1; i <= 1; i++) {
+            const spreadAng = angToPlayer + i * 0.22;
+            this.projectiles.push({
+              x: enemy.x,
+              y: enemy.y,
+              vx: Math.cos(spreadAng) * 280,
+              vy: Math.sin(spreadAng) * 280,
+              angle: spreadAng,
+              radius: 16,
+              dmg: Math.round(enemy.atk * 0.9),
+              type: enemy.data.type1,
+              skillId: "BossBullet",
+              vfx: "fire_stream",
+              homing: false,
+              color: "#EF4444",
+              pierce: 1,
+              life: 2.5,
+              statusBonus: 0.3,
+              hitSet: new Set()
+            });
+          }
+          this.spawnFloatingText(enemy.x, enemy.y - 30, "Boss 扇形彈幕齊射！", "#EF4444", 13);
+
+        } else if (mode === 1) {
+          // 2. 環形彈幕（360度全方位擴散花瓣彈幕）
+          const count = 16;
+          for (let i = 0; i < count; i++) {
+            const ringAng = (i * Math.PI * 2) / count;
+            this.projectiles.push({
+              x: enemy.x,
+              y: enemy.y,
+              vx: Math.cos(ringAng) * 220,
+              vy: Math.sin(ringAng) * 220,
+              angle: ringAng,
+              radius: 14,
+              dmg: Math.round(enemy.atk * 0.8),
+              type: enemy.data.type1,
+              skillId: "BossRing",
+              vfx: "ice_crystal",
+              homing: false,
+              color: "#38BDF8",
+              pierce: 1,
+              life: 3.0,
+              statusBonus: 0.3,
+              hitSet: new Set()
+            });
+          }
+          this.spawnFloatingText(enemy.x, enemy.y - 30, "Boss 360度環形彈幕！", "#38BDF8", 13);
+
+        } else {
+          // 3. 追蹤光束（具備短暫追蹤能力的能量彈）
+          this.projectiles.push({
+            x: enemy.x,
+            y: enemy.y,
+            vx: Math.cos(angToPlayer) * 340,
+            vy: Math.sin(angToPlayer) * 340,
+            angle: angToPlayer,
+            radius: 20,
+            dmg: Math.round(enemy.atk * 1.3),
+            type: enemy.data.type1,
+            skillId: "BossHoming",
+            vfx: "shadow_orb",
+            homing: true, // 開啟追蹤玩家特性
+            color: "#C084FC",
+            pierce: 1,
+            life: 3.2,
+            statusBonus: 0.4,
+            hitSet: new Set()
+          });
+          this.spawnFloatingText(enemy.x, enemy.y - 30, "Boss 鎖定追蹤光束！", "#C084FC", 13);
+        }
+
+        SoundFX.play("hit");
       },
 
       updateTelegraphs(dt) {
