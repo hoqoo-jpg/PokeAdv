@@ -3251,7 +3251,7 @@
         this.activeBoss = boss;
         SoundFX.play("boss");
         document.getElementById("bossHudContainer").classList.remove("hidden");
-        this.showCutsceneBanner(`[${cine.title}]`, "天象劇變！注意地面紅圈與屬性異常攻擊，善用隨行戰術技應戰！", 3400);
+        //this.showCutsceneBanner(`[${cine.title}]`, "天象劇變！注意地面紅圈與屬性異常攻擊，善用隨行戰術技應戰！", 3400);
       },
 
       /**
@@ -4575,7 +4575,9 @@
           if (this.trainerCompanion.facingX > 0) ctx.scale(-1, 1);
 
           if (tRec && tRec.loaded && tRec.img.naturalWidth > 0) {
-            ctx.drawImage(tRec.img, -23, -25, 46, 46);
+            //ctx.drawImage(tRec.img, -23, -25, 46, 46);
+            // 將寬高從 46 放大到 56，並微調位移讓置中對齊
+            ctx.drawImage(tRec.img, -28, -30, 56, 56);
           } else {
             this.drawFallbackPixelTrainer(ctx, this.trainerCompanion.pixelColors, this.trainerCompanion.walkBob);
           }
@@ -4650,7 +4652,9 @@
 
           const eSprUrl = e.facingY < 0 ? e.data.back_sprite : e.data.forward_sprite;
           const eRec = SpriteCache.get(eSprUrl);
-          const sz = e.isBoss ? 80 : (e.isElite || e.treasureType ? 56 : 42);
+          //const sz = e.isBoss ? 80 : (e.isElite || e.treasureType ? 56 : 42);
+          // 放大後的尺寸（小怪從 42 改為 52，精英從 56 改為 70，Boss 從 80 改為 96）：
+          const sz = e.isBoss ? 96 : (e.isElite || e.treasureType ? 70 : 52);
           if (eRec && eRec.loaded) {
             ctx.save();
             ctx.translate(esx, esy);
