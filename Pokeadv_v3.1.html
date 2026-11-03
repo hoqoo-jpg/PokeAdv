@@ -2656,7 +2656,7 @@
         const targetTx = p.x - p.facingX * 26;
         const targetTy = p.y;
         
-        / 計算訓練家當前的移動向量與朝向
+        // 計算訓練家當前的移動向量與朝向
         const tDiffX = targetTx - this.trainerCompanion.x;
         const tDiffY = targetTy - this.trainerCompanion.y;
         
@@ -4754,9 +4754,11 @@ if (pr.isEnemy) {
         });
 
         if (this.trainerCompanion) {
-          const tsx = toScreenX(this.trainerCompanion.x);
-          const tsy = toScreenY(this.trainerCompanion.y);
-          const bob = Math.abs(Math.sin(this.trainerCompanion.walkBob)) * 3.5;
+          const tc = this.trainerCompanion; // 先行定義 tc
+          const tsx = toScreenX(tc.x);
+          const tsy = toScreenY(tc.y);
+          const bob = Math.abs(Math.sin(tc.walkBob)) * 3.5;
+
           // 決定使用哪個方向的精靈圖
           let activeSpriteUrl = tc.sprite;
           let needFlipX = false;
@@ -4775,9 +4777,12 @@ if (pr.isEnemy) {
             // 沒有多方向精靈圖的訓練員，沿用水平翻轉
             needFlipX = tc.facingX > 0;
           }
-          const tRec = SpriteCache.get(this.trainerCompanion.sprite);
+
+          // 讀取當前方向的圖片
+          const tRec = SpriteCache.get(activeSpriteUrl);
 
           ctx.save();
+          // 繪製陰影
           ctx.strokeStyle = "rgba(255, 203, 5, 0.45)";
           ctx.fillStyle = "rgba(15, 23, 42, 0.30)";
           ctx.lineWidth = 1.8;
@@ -4787,18 +4792,15 @@ if (pr.isEnemy) {
           ctx.stroke();
 
           ctx.translate(tsx, tsy - bob);
-          if (this.trainerCompanion.facingX > 0) ctx.scale(-1, 1);
+          if (needFlipX) ctx.scale(-1, 1);
 
           if (tRec && tRec.loaded && tRec.img.naturalWidth > 0) {
-            //ctx.drawImage(tRec.img, -23, -25, 46, 46);
-            // 將寬高從 46 放大到 56，並微調位移讓置中對齊
             ctx.drawImage(tRec.img, -28, -28, 56, 56);
           } else {
-            this.drawFallbackPixelTrainer(ctx, this.trainerCompanion.pixelColors, this.trainerCompanion.walkBob);
+            this.drawFallbackPixelTrainer(ctx, tc.pixelColors, tc.walkBob);
           }
           ctx.restore();
         }
-
         this.partners.forEach(pt => {
           const psx = toScreenX(pt.x);
           const psy = toScreenY(pt.y);
