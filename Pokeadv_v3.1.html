@@ -2611,16 +2611,25 @@
         }
 
         const ilen = Math.hypot(ix, iy);
-        if (ilen > 0.05) {
-          ix /= ilen;
-          iy /= ilen;
-          if (Math.abs(ix) > 0.08) p.facingX = ix >= 0 ? 1 : -1;
-          if (iy < -0.25) p.facingY = -1;
-          else if (iy > 0.15) p.facingY = 1;
-          p.walkBob += dt * 13;
-        } else {
-          p.walkBob = 0;
-        }
+if (ilen > 0.05) {
+  ix /= ilen;
+  iy /= ilen;
+
+  // 依照移動的主要軸向來決定朝向，避免面向被上一動卡死
+  if (Math.abs(ix) > Math.abs(iy)) {
+    // 左右移動為主：更新左右朝向，並清空上下朝向
+    p.facingX = ix >= 0 ? 1 : -1;
+    p.facingY = 0;
+  } else {
+    // 上下移動為主：更新上下朝向，並清空左右朝向
+    p.facingY = iy < 0 ? -1 : 1;
+    p.facingX = 0;
+  }
+
+  p.walkBob += dt * 13;
+} else {
+  p.walkBob = 0;
+}
 
         // 地形判定與華藍海岬水域回血
         const terrain = this.getTerrainModifierAt(p.x, p.y);
@@ -4763,17 +4772,17 @@ if (pr.isEnemy) {
           let activeSpriteUrl = tc.sprite;
           let needFlipX = false;
 
-          if (tc.sprites) {
-            if (tc.facingY < 0) {
-              activeSpriteUrl = tc.sprites.up;    // 向上走：背面 (Ash_02)
-            } else if (tc.facingY > 0 && Math.abs(tc.facingX) < 0.2) {
-              activeSpriteUrl = tc.sprites.down;  // 向下走：正面 (Ash_01)
-            } else if (tc.facingX < 0) {
-              activeSpriteUrl = tc.sprites.left;  // 向左走：左側 (Ash_03)
-            } else {
-              activeSpriteUrl = tc.sprites.right; // 向右走：右側 (Ash_04)
-            }
-          } else {
+         if (tc.sprites) {
+  if (tc.facingY < 0) {
+    activeSpriteUrl = tc.sprites.up;    // 向上走：背面 (Ash_02)
+  } else if (tc.facingY > 0) {
+    activeSpriteUrl = tc.sprites.down;  // 向下走：正面 (Ash_01)
+  } else if (tc.facingX < 0) {
+    activeSpriteUrl = tc.sprites.left;  // 向左走：左側 (Ash_03)
+  } else {
+    activeSpriteUrl = tc.sprites.right; // 向右走：右側 (Ash_04)
+  }
+} else {
             // 沒有多方向精靈圖的訓練員，沿用水平翻轉
             needFlipX = tc.facingX > 0;
           }
