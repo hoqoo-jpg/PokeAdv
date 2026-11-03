@@ -195,7 +195,7 @@
     </div>
   </div>
 
-  <!-- 2. 動態封面歡迎畫面 (背景背後實時演算地圖與小怪巡邏) -->
+  <!-- 2. 動態封面歡迎畫面 (背景實時演算地圖與小怪巡邏) -->
   <div id="splashScreen" onclick="GameApp.enterLobbyFromSplash()" class="hidden absolute inset-0 z-40 bg-gradient-to-b from-slate-950/30 via-transparent to-slate-950/50 flex flex-col items-center justify-between p-4 sm:p-8 cursor-pointer overflow-hidden">
     <div class="w-full max-w-4xl flex justify-between items-center pointer-events-none mt-1">
       <div class="flex items-center gap-2 bg-slate-900/85 text-white px-3.5 py-1 rounded-full border-2 border-amber-400 shadow-lg">
@@ -207,7 +207,7 @@
       </div>
     </div>
 
-    <div class="relative my-auto flex flex-col items-center text-center max-w-3xl w-full px-2">
+    <div class="relative my-auto flex flex-col items-center text-center max-w-3xl w-full px-2 pointer-events-none">
       <div class="relative flex flex-col items-center bg-slate-900/50 backdrop-blur-[4px] px-6 py-5 rounded-3xl border-2 border-white/30 shadow-2xl">
         <div class="flex items-baseline justify-center font-black tracking-tight select-none leading-none py-1">
           <span class="text-5xl sm:text-7xl md:text-8xl adventure-logo-yellow">寶可夢</span>
@@ -458,7 +458,7 @@
     </div>
   </div>
 
-  <!-- 7. 主大廳 -->
+  <!-- 7. 主大廳 (注意：此處保留且只保留一份大廳) -->
   <div id="titleScreen" class="hidden absolute inset-0 z-30 flex flex-col items-center justify-between p-4 bg-slate-900/50 backdrop-blur-[2px] overflow-y-auto">
     <div class="w-full max-w-5xl flex justify-between items-center gap-2 shrink-0">
       <button onclick="GameApp.backToSplash()" class="poke-hud-box px-3 py-1.5 flex items-center gap-1.5 text-xs font-black text-slate-700">
@@ -630,64 +630,8 @@
       </div>
     </div>
   </div>
-  <span id="titleCoinDisplay" class="font-pixel text-amber-500 text-xs sm:text-sm">800</span>
-        </div>
-      </div>
-    </div>
 
-    <!-- 掌機戰鬥台座中央展示窗 -->
-    <div class="poke-panel max-w-3xl w-full p-5 sm:p-7 text-center my-auto">
-      <div class="inline-flex items-center gap-1.5 px-3 py-1 mb-2 rounded-full bg-red-600 text-white text-xs font-black">
-        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="w-4 h-4 pixel-sprite" alt="b" />
-        8分鐘極速節奏 ‧ GBA自然動態地貌 ‧ 瞬切立繪 ‧ 環形倒數規
-      </div>
-      <h1 class="font-black text-2xl sm:text-4xl text-slate-800 mb-1">寶可夢大冒險：大廳</h1>
-      <p class="text-xs sm:text-sm font-bold text-blue-700 mb-4">
-        攜帶「專屬代表寶可夢」享傷害+25%、攻速+20%！擊退 7.5 分鐘超夢解鎖【赤紅】！
-      </p>
-
-      <div class="flex items-center justify-center gap-6 my-3 bg-gradient-to-r from-amber-50 via-sky-50 to-emerald-50 py-3.5 px-4 rounded-2xl border-2 border-slate-300">
-        <div class="flex items-center gap-2.5">
-          <img id="lobbyTrainerPreview" src="images/Ash_01.png" class="w-14 h-14 sm:w-16 sm:h-16 pixel-sprite object-contain" alt="trainer" />
-          <div class="text-left">
-            <div class="text-[10px] font-black text-slate-500">隨行訓練員</div>
-            <div id="lobbyTrainerName" class="text-xs sm:text-sm font-black text-slate-800">小智 (Ash)</div>
-          </div>
-        </div>
-        <div class="px-2.5 py-1 rounded-full bg-amber-200 border-2 border-slate-800 text-[10px] font-black text-slate-900 shadow">並肩出戰</div>
-        <div class="flex items-center gap-2.5">
-          <img id="lobbyPokemonPreview" src="https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/sprite/forward/25.png" class="w-14 h-14 sm:w-16 sm:h-16 pixel-sprite object-contain" alt="poke" />
-          <div class="text-left">
-            <div class="text-[10px] font-black text-slate-500">出戰精靈</div>
-            <div id="lobbyPokemonName" class="text-xs sm:text-sm font-black text-slate-800">皮卡丘 (#025)</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
-        <button onclick="GameApp.openSetupFlow()" class="poke-btn-red py-3 px-4 font-black text-sm sm:text-base flex items-center justify-center gap-2">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="w-5 h-5 pixel-sprite" alt="go" /> 開始冒險
-        </button>
-        <button onclick="GameApp.openPokedexModal()" class="poke-btn-yellow py-3 px-4 font-black text-sm sm:text-base flex items-center justify-center gap-2 relative">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/vs-seeker.png" class="w-5 h-5 pixel-sprite" alt="dex" /> 151全圖鑑
-          <span id="pokedexRewardBadge" class="hidden absolute -top-2 -right-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full border-2 border-white animate-bounce">領賞!</span>
-        </button>
-        <button onclick="GameApp.openSkillTreeModal()" class="poke-btn-blue py-3 px-4 font-black text-sm sm:text-base flex items-center justify-center gap-2">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/rare-candy.png" class="w-5 h-5 pixel-sprite" alt="tree" /> 寶可夢中心
-        </button>
-        <button onclick="GameApp.openAchievementModal()" class="poke-btn-white py-3 px-4 font-black text-sm sm:text-base flex items-center justify-center gap-2 relative">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/amulet-coin.png" class="w-5 h-5 pixel-sprite" alt="ach" /> 成就徽章館
-          <span id="achClaimBadge" class="hidden absolute -top-2 -right-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full border-2 border-white animate-bounce">!</span>
-        </button>
-      </div>
-    </div>
-
-    <div class="poke-hud-box px-4 py-1.5 text-xs font-bold text-slate-700 text-center shrink-0">
-      沙盒 V11 超能重力陣 ‧ 木棧道拍岸海浪 ‧ 雙向跳崖 ‧ 暴雨/極光天候
-    </div>
-  </div>
-
-  <!-- 解鎖確認彈窗 -->
+  <!-- 11. 解鎖確認彈窗 -->
   <div id="unlock-confirm-modal" class="hidden absolute inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="poke-panel w-full max-w-sm overflow-hidden text-center">
       <div class="poke-header-red px-4 py-2.5 flex items-center justify-between">
@@ -724,10 +668,11 @@
     </div>
   </div>
 
+  <!-- 【第一批與第二批接合點】 -->
   <script>
     /**
      * ============================================================================
-     * 1. OFFICIAL ASSETS, TYPE MATRIX & ATTRIBUTE IMMUNITY (100% VISIBLE)
+     * 1. 核心常數表、圖鑑資料庫與屬性矩陣
      * ============================================================================
      */
     const ITEM_SPRITES = {
@@ -817,11 +762,6 @@
       return false;
     }
 
-    /**
-     * ============================================================================
-     * 2. COMPACT 151 KANTO POKÉDEX DATABASE
-     * ============================================================================
-     */
     const COMPACT_151 = [
       [1,"妙蛙種子","Grass","Poison",120,12,2.2,"Vine Whip",16],[2,"妙蛙草","Grass","Poison",220,22,2.5,"Vine Whip",32],[3,"妙蛙花","Grass","Poison",400,38,2.8,"Seed Bomb",0],
       [4,"小火龍","Fire","None",100,15,2.5,"Flamethrower",16],[5,"火恐龍","Fire","None",180,28,2.8,"Flamethrower",36],[6,"噴火龍","Fire","Flying",320,45,3.2,"Flamethrower",0],
@@ -934,11 +874,6 @@
 
     const PARTNER_SUMMON_POOL = [1, 4, 7, 16, 25, 35, 37, 39, 54, 58, 63, 92, 133, 147];
 
-    /**
-     * ============================================================================
-     * 3. 6 大隨行訓練家與專屬代表羈絆 (CD 全面縮短至 25~35 秒)
-     * ============================================================================
-     */
     const TRAINERS = [
       {
         id: "ash",
@@ -960,7 +895,6 @@
         bondPokemonIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 16, 17, 18, 25, 26],
         bondPreviewIds: [25, 4, 1, 7],
         pixelColors: { hat: "#EF4444", hair: "#0F172A", top: "#2563EB", pants: "#1E293B" },
-        quote: "「皮卡丘、大家，就決定是你了！全力上吧！」",
         desc: "【專屬羈絆】與搭檔享有傷害+25%、攻速+20%！主動技(CD 25s)：立即恢復20% HP，6秒內攻速暴擊大爆發！",
         mods: { dmgMult: 1.15, critBonus: 0.10, cdMult: 0.95, expMult: 1.25, speedMult: 1.08, hpMult: 1.15, regen: 1.5, areaMult: 1.10, projBonus: 0 }
       },
@@ -978,7 +912,6 @@
         bondPokemonIds: [54, 55, 116, 117, 118, 119, 120, 121, 129, 130, 131, 134],
         bondPreviewIds: [54, 121, 130, 131],
         pixelColors: { hat: "#F97316", hair: "#F97316", top: "#FEF08A", pants: "#0284C7" },
-        quote: "「看我的華藍水幕！把敵人通通沖走吧！」",
         desc: "【專屬羈絆】與水系搭檔享傷害+25%！主動技(CD 28s)：全場爆發水浪震退敵群，附加冰凍減速並恢復22% HP！",
         mods: { dmgMult: 1.12, critBonus: 0.08, cdMult: 0.94, expMult: 1.15, speedMult: 1.20, hpMult: 1.25, regen: 2.0, areaMult: 1.22, projBonus: 0 }
       },
@@ -996,7 +929,6 @@
         bondPokemonIds: [37, 38, 41, 42, 74, 75, 76, 95, 111, 112],
         bondPreviewIds: [74, 95, 37, 111],
         pixelColors: { hat: "#78350F", hair: "#451A03", top: "#15803D", pants: "#A16207" },
-        quote: "「交給我吧！特製的元氣燉湯與岩石壁壘！」",
         desc: "【專屬羈絆】搭檔享傷害+25%！主動技(CD 30s)：恢復25% HP，並展開 5 秒【50%減傷岩石護盾】！",
         mods: { dmgMult: 1.10, critBonus: 0.06, cdMult: 0.95, expMult: 1.15, speedMult: 1.05, hpMult: 1.40, regen: 3.0, areaMult: 1.18, projBonus: 0 }
       },
@@ -1014,7 +946,6 @@
         bondPokemonIds: [35, 36, 39, 40, 133, 134, 135, 136],
         bondPreviewIds: [133, 35, 39, 135],
         pixelColors: { hat: "#E11D48", hair: "#B45309", top: "#1E293B", pants: "#F43F5E" },
-        quote: "「大家一起閃耀吧！雙打連攜全開！」",
         desc: "【專屬羈絆】開局自帶 1 隻副手夥伴！主動技(CD 28s)：恢復22% HP並令全體夥伴連發大招！",
         mods: { dmgMult: 1.18, critBonus: 0.10, cdMult: 0.94, expMult: 1.25, speedMult: 1.10, hpMult: 1.20, regen: 1.8, areaMult: 1.15, projBonus: 0, startPartner: true }
       },
@@ -1032,7 +963,6 @@
         bondPokemonIds: [35, 36, 37, 38, 131, 144, 147, 148, 149],
         bondPreviewIds: [37, 35, 147, 144],
         pixelColors: { hat: "#FFFFFF", hair: "#FDE047", top: "#F8FAFC", pants: "#38BDF8" },
-        quote: "「請撐下去！我馬上幫你噴上滿たん傷藥！」",
         desc: "【專屬羈絆】野生閃光率 2 倍！主動技(CD 32s)：立即恢復 38% HP 並全面淨化所有異常狀態！",
         mods: { dmgMult: 1.14, critBonus: 0.12, cdMult: 0.93, expMult: 1.20, speedMult: 1.12, hpMult: 1.30, regen: 3.5, areaMult: 1.15, projBonus: 0, shinyBoost: 2.0 }
       },
@@ -1051,17 +981,11 @@
         bondPokemonIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 25, 26, 131, 133, 134, 135, 136, 143, 150, 151],
         bondPreviewIds: [6, 25, 143, 150],
         pixelColors: { hat: "#DC2626", hair: "#0F172A", top: "#DC2626", pants: "#1E3A8A" },
-        quote: "「…………！（赤紅壓低帽沿，下達了王牌必殺指令！）」",
         desc: "【傳奇羈絆】全傷+35%、發射數+1！主動技(CD 28s)：震退全場、恢復25% HP，6.5秒內全傷再+45%！",
         mods: { dmgMult: 1.35, critBonus: 0.18, cdMult: 0.90, expMult: 1.25, speedMult: 1.15, hpMult: 1.35, regen: 2.5, areaMult: 1.20, projBonus: 1 }
       }
     ];
 
-    /**
-     * ============================================================================
-     * 4. 8 分鐘快局難度與三大生態舞台 (整合沙盒 V11 參數)
-     * ============================================================================
-     */
     const DIFFICULTIES = [
       {
         id: "easy",
@@ -1117,7 +1041,6 @@
       {
         id: "cerulean_bay",
         name: "華藍海岬 ‧ 黃金海岸木棧道",
-        tag: "[深水海域 ‧ 拍岸海浪]",
         tileLight: "#695843",
         tileDark: "#5B4B38",
         roadColor: "#85522D",
@@ -1127,13 +1050,11 @@
         rewardMult: 1.20,
         grassSlow: 0.80,
         waterSlow: 0.60,
-        buffDesc: "【華藍潮汐】水/冰系威力+15%，踩入水域每秒回復 1.5 HP",
         desc: "還原 GBA 絆橋水路：防波堤木棧道、拍岸 U 型海浪、避難砂島。考驗狹窄走位。"
       },
       {
         id: "pallet",
         name: "真新鎮郊外 ‧ 常磐跳崖密林",
-        tag: "[樹冠呼吸 ‧ 碎葉反饋]",
         tileLight: "#2E5A36",
         tileDark: "#274E2E",
         roadColor: "#6E563B",
@@ -1143,13 +1064,11 @@
         rewardMult: 1.00,
         grassSlow: 0.85,
         waterSlow: 0.75,
-        buffDesc: "【森林庇護】草/蟲系威力+15%，經驗拾取範圍+15%",
         desc: "還原 GBA 1號道路：白木柵欄、雙層橡樹、單向跳崖（Ledges）與泥土碎石小徑。"
       },
       {
         id: "sky_pillar",
         name: "石英高原 ‧ 冠軍之路古神殿柱廊",
-        tag: "[大理石大道 ‧ 3D透視魔法陣]",
         tileLight: "#2B243D",
         tileDark: "#221C32",
         roadColor: "#3D3356",
@@ -1159,13 +1078,12 @@
         rewardMult: 1.35,
         grassSlow: 0.80,
         waterSlow: 0.70,
-        buffDesc: "【神殿共鳴】全招式冷卻-8%，超能/幽靈招式暴擊率+10%",
         desc: "還原 GBA 古神殿：大理石金蓮花邊大道、破損雕像、3D 透視旋轉五芒星霓虹魔法陣。"
       }
     ];
 
     const HELD_ITEMS = {
-      "Charcoal":     { id: "Charcoal",     name: "木炭",       sprite: ITEM_SPRITES.charcoal,     forSkill: "Flamethrower", desc: "火系威力 +20%，可讓 Lv.10【噴射火焰】突破為全屏【大字爆炎・爆炸烈焰】！" },
+      "Charcoal":     { id: "Charcoal",     name: "木炭",       sprite: ITEM_SPRITES.charcoal,     forSkill: "Flamethrower", desc: "火系威力 +20%，可讓 Lv.10【噴射火焰】突破為全屏【大字爆炎】！" },
       "MysticWater":  { id: "MysticWater",  name: "神秘水滴",   sprite: ITEM_SPRITES.mysticWater,  forSkill: "Water Gun",    desc: "水系威力 +20%，可讓 Lv.10【水槍/水炮】突破為全屏【巨浪加農水炮】！" },
       "MiracleSeed":  { id: "MiracleSeed",  name: "奇蹟種子",   sprite: ITEM_SPRITES.miracleSeed,  forSkill: "Vine Whip",    desc: "草系威力 +20%，可讓 Lv.10【藤鞭/種子炸彈】突破為全屏【森羅瘋狂植物】！" },
       "Magnet":       { id: "Magnet",       name: "磁鐵",       sprite: ITEM_SPRITES.magnet,       forSkill: "Thunderbolt",  desc: "電系威力 +20%，可讓 Lv.10【十萬伏特】突破為 360 度全屏【萬雷伏特攻擊】！" },
@@ -1254,11 +1172,6 @@
       { id: "kill_mew",     name: "始祖夢幻的奇蹟",   desc: "通過隱藏終極 Boss【夢幻 #151】考驗", reward: 2000, check: (s) => s.mewDefeated >= 1 }
     ];
 
-    /**
-     * ============================================================================
-     * 6. SPRITE CACHE & 8-BIT GBA CHIPTUNE BGM + SFX SYNTHESIZER
-     * ============================================================================
-     */
     const SpriteCache = {
       cache: new Map(),
       get(url) {
@@ -1410,11 +1323,6 @@
       }
     };
 
-    /**
-     * ============================================================================
-     * 7. GBA 地表紋理離線快取引擎 (OFFSCREEN TILE PRE-RENDER CACHE)
-     * ============================================================================
-     */
     const TileTextureCache = {
       canvasMap: new Map(),
 
@@ -1462,11 +1370,6 @@
       }
     };
 
-    /**
-     * ============================================================================
-     * 8. GBA CHUNK BUILDER (整合沙盒 V11 完整地貌與自然動態物象)
-     * ============================================================================
-     */
     const BiomeChunkBuilder = {
       chunkCache: new Map(),
 
@@ -1494,74 +1397,30 @@
 
         if (stageId === "cerulean_bay") {
           chunk.waterTiles.push({ x: baseX, y: baseY, w: size, h: size });
-
-          const hasBreach = pseudoRand(1) > 0.65 && !isCenter;
-          if (hasBreach) {
-            chunk.piers.push({ x: baseX + 264, y: baseY, w: 72, h: 220, dir: "V" });
-            chunk.piers.push({ x: baseX + 264, y: baseY + 300, w: 72, h: 300, dir: "V" });
-          } else {
-            chunk.piers.push({ x: baseX + 264, y: baseY, w: 72, h: size, dir: "V" });
+          chunk.piers.push({ x: baseX + 264, y: baseY, w: 72, h: size, dir: "V" });
+          if (pseudoRand(3) > 0.3) chunk.piers.push({ x: baseX, y: baseY + 264, w: size, h: 72, dir: "H" });
+          if (!isCenter && pseudoRand(5) > 0.35) {
+            chunk.sandIslets.push({ x: baseX + 80, y: baseY + 80, w: 150, h: 130 });
           }
-
-          if (pseudoRand(3) > 0.3) {
-            chunk.piers.push({ x: baseX, y: baseY + 264, w: size, h: 72, dir: "H" });
-          }
-
-          if (!isCenter && pseudoRand(5) > 0.32) {
-            const islx = baseX + 65 + Math.floor(pseudoRand(6) * 150);
-            const isly = baseY + 65 + Math.floor(pseudoRand(7) * 150);
-            chunk.sandIslets.push({ x: islx, y: isly, w: 150, h: 130 });
-            chunk.obstacles.push({
-              x: islx + 45, y: isly + 35, w: 60, h: 60,
-              kind: pseudoRand(8) > 0.5 ? "reef" : "stranded_debris"
-            });
-          }
-
-          for (let i = 0; i < 5; i++) {
-            chunk.decorList.push({
-              x: baseX + 50 + Math.floor(pseudoRand(i * 4 + 30) * (size - 100)),
-              y: baseY + 50 + Math.floor(pseudoRand(i * 4 + 31) * (size - 100)),
-              type: i % 2 === 0 ? "starfish" : "shell"
-            });
-          }
-
         } else if (stageId === "pallet") {
           chunk.roads.push({ x: baseX, y: baseY + 265, w: size, h: 70, dir: "H" });
-          if (pseudoRand(1) > 0.35) {
-            chunk.roads.push({ x: baseX + 265, y: baseY, w: 70, h: size, dir: "V" });
+          if (pseudoRand(1) > 0.35) chunk.roads.push({ x: baseX + 265, y: baseY, w: 70, h: size, dir: "V" });
+
+          if (!isCenter && pseudoRand(2) > 0.3) {
+            chunk.ledges.push({ x: baseX + 60, y: baseY + 180, w: 200, h: 22 });
           }
 
-          if (!isCenter && pseudoRand(2) > 0.25) {
-            const ly = baseY + 150 + Math.floor(pseudoRand(4) * 240);
-            chunk.ledges.push({ x: baseX + 60, y: ly, w: 200, h: 22 });
-            chunk.ledges.push({ x: baseX + 330, y: ly, w: 210, h: 22 });
-          }
+          chunk.grassTiles.push({ x: baseX + 50, y: baseY + 60, w: 160, h: 120 });
 
-          for (let i = 0; i < 2; i++) {
-            chunk.grassTiles.push({
-              x: baseX + 50 + Math.floor(pseudoRand(i * 3 + 6) * 140),
-              y: baseY + 60 + Math.floor(pseudoRand(i * 3 + 7) * 140),
-              w: 160, h: 120
-            });
-          }
-
+          // 核心建築與自然樹木
           if (!isCenter) {
             const obPick = pseudoRand(12);
-            let kind = "oak_tree";
-            let ow = 64, oh = 68;
-
-            if (obPick > 0.70) {
-              kind = "house"; ow = 94; oh = 84;
-            } else if (obPick > 0.45) {
-              kind = "fallen_log"; ow = 96; oh = 40;
-            } else if (obPick > 0.25) {
-              kind = "tree_stump"; ow = 48; oh = 48;
-            }
-
+            let kind = obPick > 0.65 ? "house" : (obPick > 0.35 ? "fallen_log" : "oak_tree");
             chunk.obstacles.push({
-              x: baseX + 80 + Math.floor(pseudoRand(13) * 360),
-              y: baseY + 80 + Math.floor(pseudoRand(14) * 360),
-              w: ow, h: oh, kind
+              x: baseX + 100, y: baseY + 100,
+              w: kind === "house" ? 94 : 64,
+              h: kind === "house" ? 84 : 68,
+              kind
             });
           }
 
@@ -1573,30 +1432,9 @@
               color: i % 2 === 0 ? "#F87171" : "#F8FAFC"
             });
           }
-
         } else if (stageId === "sky_pillar") {
           chunk.roads.push({ x: baseX + 210, y: baseY, w: 180, h: size, dir: "V", isMarble: true });
-
-          for (let row = 0; row < 2; row++) {
-            const py = baseY + 110 + row * 270;
-            const isBrokenLeft = pseudoRand(row * 4 + 10) > 0.55;
-            const isBrokenRight = pseudoRand(row * 4 + 11) > 0.65;
-
-            chunk.obstacles.push({
-              x: baseX + 135, y: py, w: 56, h: 72,
-              kind: isBrokenLeft ? "broken_pillar" : "statue"
-            });
-            chunk.obstacles.push({
-              x: baseX + 409, y: py, w: 56, h: 72,
-              kind: isBrokenRight ? "fallen_capital" : "statue"
-            });
-          }
-
-          if (pseudoRand(9) > 0.38) {
-            chunk.grassTiles.push({
-              x: baseX + 230, y: baseY + 230, w: 140, h: 140, isPsychicWell: true
-            });
-          }
+          chunk.grassTiles.push({ x: baseX + 230, y: baseY + 230, w: 140, h: 140, isPsychicWell: true });
         }
 
         this.chunkCache.set(key, chunk);
@@ -1605,7 +1443,7 @@
     };
     /**
      * ============================================================================
-     * 9. MAIN GAME ENGINE (GameApp) - 8分鐘快局核心推進與全域渲染
+     * 9. MAIN GAME ENGINE (GameApp) - 完整 8 分鐘快局與自然地貌渲染
      * ============================================================================
      */
     const GameApp = {
@@ -1681,10 +1519,9 @@
       telegraphs: [],
       activeBoss: null,
 
-      // 8 分鐘快局時間軸常數
       runTime: 0,
       spawnTimer: 0.4,
-      eliteSpawnTimer: 45,       // 0:45 登場第一隻精英
+      eliteSpawnTimer: 45,       // 0:45 首隻精英
       treasureSpawnTimer: 35,    // 35s 頻繁寶藏怪
       magnetSpawnTimer: 30,
       birdBossSpawned: false,    // 5:00 (300s) 三聖鳥
@@ -1791,9 +1628,7 @@
       loadSaveData() {
         try {
           const raw = localStorage.getItem("POKEMON_ADV_PRO_8M");
-          if (raw) {
-            this.saveData = { ...this.saveData, ...JSON.parse(raw) };
-          }
+          if (raw) this.saveData = { ...this.saveData, ...JSON.parse(raw) };
         } catch (e) {}
       },
 
@@ -1951,7 +1786,7 @@
         window.addEventListener("touchcancel", onTouchEnd);
       },
 
-      // --- 封面背景動態演算 ---
+      // --- 封面背景動態演算 (完整地貌、建築與花草復原) ---
       updateTitleDemo(dt) {
         this.titleDemo.camX += 38 * dt;
         this.titleDemo.camY = Math.sin(this.titleDemo.camX * 0.003) * 45;
@@ -1965,7 +1800,7 @@
         const toSx = (wx) => wx - camX + this.width / 2;
         const toSy = (wy) => wy - camY + this.height / 2;
 
-        // 離線快取繪製地表
+        // 1. 底層 Texture 快取平鋪
         const tileSize = 60;
         const startTx = Math.floor((camX - this.width / 2) / tileSize) - 1;
         const endTx = Math.floor((camX + this.width / 2) / tileSize) + 1;
@@ -1982,8 +1817,103 @@
           }
         }
 
-        // 野生小怪漫步與跳躍
-        const now = performance.now() * 0.004;
+        // 2. 繪製常磐自然地表物：小徑、常磐高草叢、紅頂木屋、大橡樹與野花
+        const startCx = Math.floor((camX - this.width / 2) / 600) - 1;
+        const endCx = Math.floor((camX + this.width / 2) / 600) + 1;
+        const startCy = Math.floor((camY - this.height / 2) / 600) - 1;
+        const endCy = Math.floor((camY + this.height / 2) / 600) + 1;
+        const now = performance.now() * 0.003;
+
+        for (let cx = startCx; cx <= endCx; cx++) {
+          for (let cy = startCy; cy <= endCy; cy++) {
+            const chunk = BiomeChunkBuilder.getBiomeChunk("pallet", cx, cy);
+
+            // 道路泥路
+            chunk.roads.forEach(r => {
+              const rx = toSx(r.x); const ry = toSy(r.y);
+              ctx.fillStyle = "#6E563B";
+              ctx.fillRect(rx, ry, r.w, r.h);
+              ctx.strokeStyle = "#42311E";
+              ctx.lineWidth = 2;
+              ctx.strokeRect(rx, ry, r.w, r.h);
+            });
+
+            // 常磐減速高草叢
+            chunk.grassTiles.forEach(g => {
+              const gx = toSx(g.x); const gy = toSy(g.y);
+              ctx.fillStyle = "#1B3B22";
+              ctx.beginPath();
+              ctx.roundRect(gx, gy, g.w, g.h, 12);
+              ctx.fill();
+              ctx.strokeStyle = "#4ADE80";
+              ctx.lineWidth = 1.8;
+              for (let tx = gx + 16; tx < gx + g.w - 14; tx += 22) {
+                for (let ty = gy + 18; ty < gy + g.h - 12; ty += 22) {
+                  const sway = Math.sin(now * 1.5 + tx * 0.1) * 3;
+                  ctx.beginPath();
+                  ctx.moveTo(tx, ty); ctx.lineTo(tx - 3 + sway, ty - 6);
+                  ctx.moveTo(tx, ty); ctx.lineTo(tx + 3 + sway, ty - 6);
+                  ctx.stroke();
+                }
+              }
+            });
+
+            // 建築物 (紅頂木屋) 或雙層橡樹
+            chunk.obstacles.forEach(ob => {
+              const ox = toSx(ob.x); const oy = toSy(ob.y);
+              ctx.fillStyle = "rgba(15,23,42,0.35)";
+              ctx.fillRect(ox + 4, oy + 6, ob.w, ob.h);
+
+              if (ob.kind === "house") {
+                // 紅頂洋房
+                ctx.fillStyle = "#FEF3C7";
+                ctx.strokeStyle = "#1C1E38";
+                ctx.lineWidth = 2.5;
+                ctx.fillRect(ox, oy + 26, ob.w, ob.h - 26);
+                ctx.strokeRect(ox, oy + 26, ob.w, ob.h - 26);
+                ctx.fillStyle = "#DC2626";
+                ctx.beginPath();
+                ctx.moveTo(ox - 6, oy + 30);
+                ctx.lineTo(ox + ob.w / 2, oy);
+                ctx.lineTo(ox + ob.w + 6, oy + 30);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke();
+                ctx.fillStyle = "#92400E";
+                ctx.fillRect(ox + 18, oy + ob.h - 28, 20, 28);
+              } else {
+                // 雙層立體大橡樹
+                const sway = Math.sin(now * 1.3 + ob.x * 0.05) * 2;
+                ctx.fillStyle = "#78350F";
+                ctx.fillRect(ox + ob.w * 0.38, oy + ob.h * 0.55, ob.w * 0.24, ob.h * 0.45);
+                ctx.fillStyle = "#15803D";
+                ctx.beginPath();
+                ctx.arc(ox + ob.w / 2 + sway, oy + ob.h * 0.42, ob.w * 0.46, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#22C55E";
+                ctx.beginPath();
+                ctx.arc(ox + ob.w * 0.44 + sway * 1.2, oy + ob.h * 0.34, ob.w * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            });
+
+            // 微景小花
+            chunk.decorList.forEach(d => {
+              const dx = toSx(d.x); const dy = toSy(d.y);
+              ctx.save();
+              ctx.translate(dx, dy);
+              ctx.fillStyle = d.color || "#F87171";
+              ctx.fillRect(-2, -5, 4, 4);
+              ctx.fillRect(-2, 2, 4, 4);
+              ctx.fillRect(-5, -2, 4, 4);
+              ctx.fillRect(2, -2, 4, 4);
+              ctx.fillStyle = "#FACC15";
+              ctx.fillRect(-2, -2, 4, 4);
+              ctx.restore();
+            });
+          }
+        }
+
+        // 3. 野生小怪漫步與跳躍
         this.titleDemo.wildWanderers.forEach((w, idx) => {
           const worldX = Math.floor((camX + w.offsetX) / 1200) * 1200 + ((w.offsetX + idx * 170) % 1200);
           const worldY = camY + w.offsetY + Math.sin(now + w.phase) * 14;
@@ -2516,7 +2446,1126 @@
         document.getElementById("speedToggleText").textContent = `${this.timeScale}x`;
       },
 
-      // --- 主循環調度 ---
+      // --- 8 分鐘戰鬥啟動 ---
+      startGameRun() {
+        SoundFX.init();
+        SoundFX.startBgm("battle");
+        document.getElementById("setupModal").classList.add("hidden");
+        document.getElementById("titleScreen").classList.add("hidden");
+        document.getElementById("hudLayer").classList.remove("hidden");
+
+        const basePoke = POKEMON_MAP.get(this.selectedStarterId) || POKEMON_MAP.get(25);
+        const tr = this.selectedTrainer || TRAINERS[0];
+        const upg = this.saveData.upgrades;
+
+        const isTrainerBond = (tr.bondPokemonIds || []).includes(basePoke.id);
+        const hasShiny = !!this.saveData.shinyUnlocked[basePoke.id] && !!this.useShinyStarter[basePoke.id];
+        const shinyMult = hasShiny ? 1.20 : 1.0;
+
+        const maxHp = Math.round(basePoke.hp * tr.mods.hpMult * (1 + upg.hp * 0.12) * shinyMult);
+        const maxSkillSlots = 3 + (upg.fourthSlot >= 1 ? 1 : 0);
+        const trainerSkillMaxCd = Math.round(tr.skillCd * (1 - (upg.trainerCd || 0) * 0.04));
+
+        this.player = {
+          id: basePoke.id,
+          data: basePoke,
+          x: 0, y: 0, vx: 0, vy: 0,
+          facingX: -1, facingY: 1, lastFacingX: -1,
+          walkBob: 0,
+          isJumpingLedge: false, jumpTimer: 0,
+          isShiny: hasShiny,
+          isTrainerBond,
+          bondColor: tr.bondColor || "#FFCB05",
+          bondName: tr.bondName || "專屬羈絆",
+          level: 1, exp: 0, nextExp: 16,
+          hp: maxHp, maxHp,
+          baseAtk: basePoke.atk * shinyMult,
+          baseSpeed: basePoke.speed,
+          speedMultiplier: 1.0, // 補齊定義，消除 NaN
+          dmgMult: tr.mods.dmgMult * (1 + upg.atk * 0.08) * (isTrainerBond ? 1.25 : 1.0),
+          cdMult: tr.mods.cdMult * Math.pow(0.965, upg.cd) * (isTrainerBond ? 0.80 : 1.0),
+          speedMult: tr.mods.speedMult,
+          areaMult: tr.mods.areaMult,
+          critRate: 0.10 + tr.mods.critBonus,
+          regen: tr.mods.regen + upg.hp * 0.5,
+          magnetRadius: 105,
+          projBonus: tr.mods.projBonus || 0,
+          maxSkillSlots,
+          skills: {},
+          heldItems: {},
+          invulnTimer: 0,
+          hitFlashTimer: 0,
+          buffTimer: 0,
+          shieldTimer: 0,
+          trainerSkillCd: 0,
+          trainerSkillMaxCd,
+          trainerSkillActiveTimer: 0,
+          trainerSkillMaxActive: tr.duration || 5.0,
+          status: null,
+          statusTimer: 0,
+          statusTick: 0
+        };
+
+        const initSkillId = SKILLS_CATALOG[basePoke.skill] ? basePoke.skill : "Tackle";
+        this.player.skills[initSkillId] = { id: initSkillId, level: 1, evolved: false, timer: 0.2 };
+
+        this.trainerCompanion = {
+          x: 26, y: 8,
+          facingX: -1, facingY: 1,
+          walkBob: 0,
+          sprite: tr.sprite,
+          sprites: tr.sprites || null,
+          name: tr.name,
+          pixelColors: tr.pixelColors
+        };
+
+        this.partners = [];
+        this.enemies = [];
+        this.projectiles = [];
+        this.particles = [];
+        this.lightningArcs = [];
+        this.floatingTexts = [];
+        this.gems = [];
+        this.mapItems = [];
+        this.meleeEffects = [];
+        this.ultimateVfxList = [];
+        this.telegraphs = [];
+        this.activeBoss = null;
+        this.weather = "clear";
+        this.cutinTimer = 0;
+
+        if (tr.mods.startPartner || (upg.partner >= 1)) {
+          this.summonOrUpgradePartner();
+        }
+
+        this.runTime = 0;
+        this.spawnTimer = 0.4;
+        this.eliteSpawnTimer = 45;
+        this.treasureSpawnTimer = 35;
+        this.magnetSpawnTimer = 30;
+        this.birdBossSpawned = false;
+        this.mewtwoBossSpawned = false;
+        this.secretMewSpawned = false;
+        this.kills = 0;
+        this.runCoins = 0;
+        this.timeScale = 1;
+        document.getElementById("speedToggleText").textContent = "1x";
+        document.getElementById("bossHudContainer").classList.add("hidden");
+
+        this.state = "PLAYING";
+        this.refreshHUD();
+      },
+
+      triggerTrainerActiveSkill() {
+        if (this.state !== "PLAYING" || !this.player) return;
+        if (this.player.trainerSkillCd > 0 || this.player.trainerSkillActiveTimer > 0) return;
+
+        const tr = this.selectedTrainer;
+        const p = this.player;
+
+        p.trainerSkillActiveTimer = p.trainerSkillMaxActive;
+        p.status = null;
+        p.statusTimer = 0;
+
+        this.cutinTimer = 0.38;
+        this.cutinTrainer = tr;
+        SoundFX.play("ultimate");
+        this.camera.shakeTime = 0.35;
+        this.camera.shakeMagnitude = 10;
+
+        let healPct = 0.20;
+        if (tr.id === "ash") {
+          healPct = 0.20;
+          p.buffTimer = 6.0;
+          this.spawnFloatingText(p.x, p.y - 35, "小智熱血爆發! 攻速暴擊UP!", "#FFCB05", 15);
+        } else if (tr.id === "misty") {
+          healPct = 0.22;
+          this.meleeEffects.push({ style: "slam_wave", x: p.x, y: p.y, radius: 180, timer: 0.45, maxTime: 0.45, color: "#38BDF8" });
+          this.enemies.forEach(e => {
+            const d = Math.hypot(e.x - p.x, e.y - p.y);
+            if (d < 220) {
+              const ang = Math.atan2(e.y - p.y, e.x - p.x);
+              e.x += Math.cos(ang) * 95;
+              e.y += Math.sin(ang) * 95;
+              e.status = "Freeze"; e.statusTimer = 3.2;
+            }
+          });
+        } else if (tr.id === "brock") {
+          healPct = 0.25;
+          p.shieldTimer = 5.0;
+          this.spawnFloatingText(p.x, p.y - 35, "岩石減傷壁壘 5秒!", "#F59E0B", 15);
+        } else if (tr.id === "serena") {
+          healPct = 0.22;
+          this.partners.forEach(pt => { pt.cdTimer = 0; });
+          this.spawnFloatingText(p.x, p.y - 35, "雙打夥伴全連攜!", "#F472B6", 15);
+        } else if (tr.id === "lillie") {
+          healPct = 0.38;
+          p.invulnTimer = 2.5;
+          this.spawnFloatingText(p.x, p.y - 35, "傷藥噴霧 +38% HP ＆ 淨化異常!", "#34D399", 15);
+        } else if (tr.id === "red") {
+          healPct = 0.25;
+          p.buffTimer = 6.5;
+          this.enemies.forEach(e => {
+            const d = Math.hypot(e.x - p.x, e.y - p.y);
+            if (d < 250 && !e.isBoss) {
+              const ang = Math.atan2(e.y - p.y, e.x - p.x);
+              e.x += Math.cos(ang) * 120;
+              e.y += Math.sin(ang) * 120;
+            }
+          });
+          this.spawnFloatingText(p.x, p.y - 35, "赤紅王牌號令! 全傷+45%!", "#EF4444", 16);
+        }
+
+        const healAmt = Math.round(p.maxHp * healPct);
+        p.hp = Math.min(p.maxHp, p.hp + healAmt);
+        this.spawnFloatingText(p.x, p.y - 16, `+${healAmt} HP`, "#10B981", 14);
+        this.refreshHUD();
+      },
+
+      updateCombat(dt) {
+        this.runTime += dt;
+        const p = this.player;
+
+        if (this.cutinTimer > 0) this.cutinTimer -= dt;
+        if (p.hitFlashTimer > 0) p.hitFlashTimer -= dt;
+
+        if (p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + p.regen * dt);
+        if (p.invulnTimer > 0) p.invulnTimer -= dt;
+        if (p.buffTimer > 0) p.buffTimer -= dt;
+        if (p.shieldTimer > 0) p.shieldTimer -= dt;
+
+        if (p.trainerSkillActiveTimer > 0) {
+          p.trainerSkillActiveTimer -= dt;
+          if (p.trainerSkillActiveTimer <= 0) p.trainerSkillCd = p.trainerSkillMaxCd;
+        } else if (p.trainerSkillCd > 0) {
+          p.trainerSkillCd = Math.max(0, p.trainerSkillCd - dt);
+        }
+
+        if (this.camera.shakeTime > 0) this.camera.shakeTime -= dt;
+
+        if (p.statusTimer > 0) {
+          p.statusTimer -= dt;
+          p.statusTick -= dt;
+          if (p.statusTick <= 0) {
+            p.statusTick = 0.65;
+            if (p.status === "Burn" || p.status === "Poison") {
+              const dotDmg = Math.max(3, Math.round(p.maxHp * 0.015));
+              p.hp = Math.max(1, p.hp - dotDmg);
+              this.spawnFloatingText(p.x, p.y - 22, `-${dotDmg}`, p.status === 'Burn' ? "#F97316" : "#A855F7", 11);
+            }
+          }
+          if (p.statusTimer <= 0) p.status = null;
+        }
+
+        let ix = this.touchInput.active ? this.touchInput.dx : 0;
+        let iy = this.touchInput.active ? this.touchInput.dy : 0;
+        if (this.keys["w"] || this.keys["arrowup"]) iy -= 1;
+        if (this.keys["s"] || this.keys["arrowdown"]) iy += 1;
+        if (this.keys["a"] || this.keys["arrowleft"]) ix -= 1;
+        if (this.keys["d"] || this.keys["arrowright"]) ix += 1;
+
+        if (p.status === "Confusion") { ix = -ix; iy = -iy; }
+
+        const ilen = Math.hypot(ix, iy);
+        if (ilen > 0.05) {
+          ix /= ilen; iy /= ilen;
+          if (Math.abs(ix) > Math.abs(iy)) {
+            p.facingX = ix >= 0 ? 1 : -1;
+            p.facingY = 0;
+            p.lastFacingX = p.facingX;
+          } else {
+            p.facingY = iy < 0 ? -1 : 1;
+            p.facingX = 0;
+          }
+          p.walkBob += dt * 11;
+        } else {
+          p.walkBob = 0;
+        }
+
+        if (p.isJumpingLedge) {
+          p.jumpTimer -= dt;
+          p.y += 180 * dt;
+          if (p.jumpTimer <= 0) p.isJumpingLedge = false;
+        } else {
+          const terrain = this.getTerrainAt(p.x, p.y);
+          if (terrain.inWater && this.selectedStage.id === "cerulean_bay" && p.hp < p.maxHp) {
+            p.hp = Math.min(p.maxHp, p.hp + 1.5 * dt);
+          }
+
+          const statusSpdMod = p.status === "Freeze" ? 0.45 : (p.status === "Paralysis" ? 0.65 : 1.0);
+          const moveSpd = (88 + p.baseSpeed * 22) * (p.speedMultiplier || 1.0) * terrain.speedMult * statusSpdMod * (p.buffTimer > 0 ? 1.25 : 1.0);
+          p.vx = ix * moveSpd;
+          p.vy = iy * moveSpd;
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          this.resolveCollisions(p, 18);
+        }
+
+        const sideOffset = (p.facingX !== 0 ? p.facingX : (p.lastFacingX || -1)) * 28;
+        const targetTx = p.x - sideOffset;
+        const targetTy = p.y + (p.facingY < 0 ? 12 : -8);
+        this.trainerCompanion.x += (targetTx - this.trainerCompanion.x) * Math.min(1, dt * 11.5);
+        this.trainerCompanion.y += (targetTy - this.trainerCompanion.y) * Math.min(1, dt * 11.5);
+        this.trainerCompanion.facingX = p.facingX;
+        this.trainerCompanion.facingY = p.facingY;
+        this.trainerCompanion.walkBob = p.walkBob;
+
+        this.partnerOrbitBase += dt * 2.1;
+        this.partners.forEach((pt, idx) => {
+          const angle = this.partnerOrbitBase + idx * Math.PI;
+          pt.x += (p.x + Math.cos(angle) * 58 - pt.x) * Math.min(1, dt * 10);
+          pt.y += (p.y + Math.sin(angle) * 46 - pt.y) * Math.min(1, dt * 10);
+          pt.facingX = p.facingX;
+          pt.facingY = p.facingY;
+
+          pt.cdTimer -= dt;
+          if (pt.cdTimer <= 0) {
+            const target = this.findNearestEnemyInViewport(pt.x, pt.y, 340);
+            if (target) {
+              const skId = SKILLS_CATALOG[pt.data.skill] ? pt.data.skill : "Tackle";
+              this.fireSingleSkill(pt, skId, Math.min(10, pt.level), false, 0.75);
+              pt.cdTimer = 1.45;
+            }
+          }
+        });
+
+        this.camera.x = p.x;
+        this.camera.y = p.y;
+
+        const cdFactor = Math.max(0.55, p.cdMult * (p.buffTimer > 0 ? 0.72 : 1.0));
+        Object.values(p.skills).forEach(skSlot => {
+          skSlot.timer -= dt;
+          if (skSlot.timer <= 0) {
+            const meta = SKILLS_CATALOG[skSlot.id];
+            if (!meta) return;
+            if (skSlot.evolved) {
+              this.triggerUltimateSuperMove(meta, skSlot);
+              skSlot.timer = Math.max(2.2, meta.baseCd * 1.85 * cdFactor);
+            } else {
+              this.fireSingleSkill(p, skSlot.id, skSlot.level, false, 1.0);
+              const lvCdBonus = skSlot.level >= 9 ? 0.80 : (skSlot.level >= 4 ? 0.90 : 1.0);
+              skSlot.timer = Math.max(0.32, meta.baseCd * lvCdBonus * cdFactor);
+            }
+          }
+        });
+
+        this.updateSpawners(dt);
+        this.updateWeatherAndAmbiance(dt);
+        this.updateTelegraphs(dt);
+        this.updateProjectiles(dt);
+        this.updateMeleeEffects(dt);
+        this.updateUltimateVfx(dt);
+        this.updateEnemies(dt);
+        this.updateLootAndGems(dt);
+        this.updateParticlesAndTexts(dt);
+        this.refreshHUD();
+      },
+
+      updateSpawners(dt) {
+        const diff = this.selectedDifficulty;
+        const minutes = this.runTime / 60;
+
+        // 5:00 三聖鳥
+        if (!this.birdBossSpawned && this.runTime >= 300) {
+          this.birdBossSpawned = true;
+          const birdIds = [144, 145, 146];
+          this.spawnBoss(birdIds[Math.floor(Math.random() * birdIds.length)], false);
+        }
+
+        // 7:30 超夢
+        if (!this.mewtwoBossSpawned && this.runTime >= 450) {
+          this.mewtwoBossSpawned = true;
+          this.spawnBoss(150, true);
+        }
+
+        this.treasureSpawnTimer -= dt;
+        if (this.treasureSpawnTimer <= 0) {
+          this.treasureSpawnTimer = 36;
+          const isMeowth = Math.random() < 0.58;
+          this.spawnTreasureMonster(isMeowth ? "meowth" : "chansey");
+        }
+
+        this.magnetSpawnTimer -= dt;
+        if (this.magnetSpawnTimer <= 0) {
+          this.magnetSpawnTimer = 32;
+          const ang = Math.random() * Math.PI * 2;
+          this.spawnMapLoot("magnet", this.player.x + Math.cos(ang) * 280, this.player.y + Math.sin(ang) * 280);
+        }
+
+        this.eliteSpawnTimer -= dt;
+        if (this.eliteSpawnTimer <= 0) {
+          this.eliteSpawnTimer = 45;
+          this.spawnWildEnemy(true);
+        }
+
+        this.spawnTimer -= dt;
+        if (this.spawnTimer <= 0) {
+          const baseInterval = Math.max(0.24, (1.10 - minutes * 0.12) / diff.spawnRateMult);
+          this.spawnTimer = baseInterval;
+          if (this.enemies.length < 75) {
+            this.spawnWildEnemy(false);
+          }
+        }
+      },
+
+      spawnWildEnemy(isElite = false) {
+        const minutes = this.runTime / 60;
+        const diff = this.selectedDifficulty;
+
+        let candidates = REGULAR_MOB_POOL;
+        if (minutes < 1.5) candidates = REGULAR_MOB_POOL.filter(p => p.hp <= 140);
+        else if (minutes < 4.5) candidates = REGULAR_MOB_POOL.filter(p => p.hp <= 260);
+        const pick = candidates[Math.floor(Math.random() * candidates.length)] || REGULAR_MOB_POOL[0];
+
+        const ang = Math.random() * Math.PI * 2;
+        const dist = Math.max(this.width, this.height) * 0.56 + 40;
+        const ex = this.player.x + Math.cos(ang) * dist;
+        const ey = this.player.y + Math.sin(ang) * dist;
+
+        const timeHpScale = 1 + (minutes * 0.72) + Math.pow(minutes / 2.6, 2.0) * 0.85;
+        const hp = Math.round((35 + pick.hp * 0.55) * timeHpScale * diff.hpMult * (isElite ? 3.8 : 1.0));
+        const atk = Math.round((8 + pick.atk * 0.35) * (1 + minutes * 0.18) * diff.atkMult * (isElite ? 1.45 : 1.0));
+
+        this.saveData.pokedexSeen[pick.id] = true;
+
+        this.enemies.push({
+          id: pick.id,
+          data: pick,
+          x: ex, y: ey,
+          hp, maxHp: hp, atk,
+          speed: (38 + pick.speed * 11) * diff.spdMult * (isElite ? 1.08 : 1.0),
+          radius: isElite ? 30 : 20,
+          isElite, isBoss: false,
+          isShiny: Math.random() < 0.003 * diff.shinyBonus,
+          hitFlashTimer: 0,
+          facingX: -1, facingY: 1,
+          status: null, statusTimer: 0, statusTick: 0,
+          ccImmunityTimer: 0,
+          rangedCd: 2.2 + Math.random() * 2.0
+        });
+      },
+
+      spawnBoss(bossId, isFinalMewtwo = false) {
+        const bData = POKEMON_MAP.get(bossId);
+        const diff = this.selectedDifficulty;
+        const ang = Math.random() * Math.PI * 2;
+        const bx = this.player.x + Math.cos(ang) * 280;
+        const by = this.player.y + Math.sin(ang) * 280;
+        const hp = Math.round((isFinalMewtwo ? 14000 : 7500) * diff.hpMult);
+
+        const weatherMap = { 144: "blizzard", 145: "thunder", 146: "heatwave", 150: "aura", 151: "aura" };
+        this.weather = weatherMap[bossId] || "thunder";
+
+        SoundFX.startBgm("boss");
+        this.camera.shakeTime = 0.65;
+        this.camera.shakeMagnitude = 14;
+
+        this.saveData.pokedexSeen[bossId] = true;
+        const boss = {
+          id: bossId,
+          data: bData,
+          x: bx, y: by,
+          hp, maxHp: hp,
+          atk: Math.round((isFinalMewtwo ? 42 : 30) * diff.atkMult),
+          speed: (isFinalMewtwo ? 92 : 82) * diff.spdMult,
+          radius: 46,
+          isElite: true, isBoss: true,
+          hitFlashTimer: 0,
+          facingX: -1, facingY: 1,
+          status: null, statusTimer: 0, statusTick: 0,
+          ccImmunityTimer: 0,
+          rangedCd: 2.2
+        };
+        this.enemies.push(boss);
+        this.activeBoss = boss;
+        SoundFX.play("boss");
+        document.getElementById("bossHudContainer").classList.remove("hidden");
+      },
+
+      fireSingleSkill(caster, skillId, level, isEvolved, dmgScale = 1.0) {
+        const meta = SKILLS_CATALOG[skillId] || SKILLS_CATALOG["Tackle"];
+        const target = this.findNearestEnemyInViewport(caster.x, caster.y, 380);
+        const baseAngle = target
+          ? Math.atan2(target.y - caster.y, target.x - caster.x)
+          : (caster.facingX >= 0 ? 0 : Math.PI);
+
+        const countBonus = (level >= 3 ? 1 : 0) + (level >= 6 ? 1 : 0) + (level >= 9 ? 1 : 0) + (caster === this.player ? this.player.projBonus : 0);
+        const count = Math.min(6, 1 + countBonus);
+        const isStab = (caster.data.type1 === meta.type || caster.data.type2 === meta.type);
+        const stabMult = isStab ? 1.35 : 1.0;
+
+        let weatherMult = 1.0;
+        if (this.weather === "rain" && meta.type === "Water") weatherMult = 1.25;
+        if (this.weather === "heatwave" && meta.type === "Fire") weatherMult = 1.25;
+        if (this.weather === "blizzard" && meta.type === "Ice") weatherMult = 1.20;
+        if (this.weather === "aura" && (meta.type === "Psychic" || meta.type === "Ghost")) weatherMult = 1.20;
+
+        const rawDmg = (meta.baseDmg + this.player.baseAtk * 0.85) 
+          * (1 + (level - 1) * 0.22) * this.player.dmgMult * stabMult * dmgScale * weatherMult;
+
+        if (meta.isMelee) {
+          this.executeMeleeSkill(caster, meta, level, count, baseAngle, rawDmg);
+          return;
+        }
+
+        if (skillId === "Thunderbolt") {
+          const maxRange = 220 * this.player.areaMult;
+          const nearby = this.enemies
+            .filter(e => Math.hypot(e.x - caster.x, e.y - caster.y) <= maxRange)
+            .sort((a, b) => Math.hypot(a.x - caster.x, a.y - caster.y) - Math.hypot(b.x - caster.x, b.y - caster.y));
+
+          const bolts = Math.max(3, count + 2);
+          for (let b = 0; b < bolts; b++) {
+            const enemy = nearby[b];
+            let endX, endY;
+            if (enemy) {
+              endX = enemy.x; endY = enemy.y;
+              this.dealDamageToEnemy(enemy, rawDmg, meta.type, 0.45, 28);
+            } else {
+              const spread = baseAngle + (b - (bolts - 1) / 2) * 0.36;
+              endX = caster.x + Math.cos(spread) * 160;
+              endY = caster.y + Math.sin(spread) * 160;
+            }
+            this.createLightningArc(caster.x, caster.y, endX, endY, "#FACC15");
+          }
+          SoundFX.play("hit");
+          return;
+        }
+
+        for (let i = 0; i < count; i++) {
+          const spread = count > 1 ? (i - (count - 1) / 2) * 0.16 : 0;
+          const ang = baseAngle + spread;
+          const spd = skillId === "Hydro Pump" ? 420 : 360;
+
+          this.projectiles.push({
+            x: caster.x, y: caster.y,
+            vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
+            angle: ang, radius: 18 * this.player.areaMult,
+            dmg: rawDmg, type: meta.type, skillId,
+            vfx: meta.vfx || "star_shot",
+            color: meta.color, pierce: 3, life: 1.40,
+            hitSet: new Set()
+          });
+        }
+        SoundFX.play("hit");
+      },
+
+      executeMeleeSkill(caster, meta, level, count, baseAngle, rawDmg) {
+        const areaScale = this.player.areaMult * (level >= 3 ? 1.15 : 1.0);
+        const maxReach = 96 * areaScale;
+
+        this.meleeEffects.push({
+          style: meta.meleeStyle,
+          ox: caster.x, oy: caster.y,
+          angle: baseAngle, radius: maxReach,
+          timer: 0.32, maxTime: 0.32, color: meta.color
+        });
+
+        this.enemies.forEach(e => {
+          const d = Math.hypot(e.x - caster.x, e.y - caster.y);
+          if (d <= maxReach + e.radius) {
+            this.dealDamageToEnemy(e, rawDmg, meta.type, 0.35, 52);
+            if (caster === this.player && this.player.hp < this.player.maxHp) {
+              this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.round(this.player.maxHp * 0.008));
+            }
+          }
+        });
+        SoundFX.play("hit");
+      },
+
+      triggerUltimateSuperMove(meta, skSlot) {
+        const p = this.player;
+        this.camera.shakeTime = 0.32;
+        this.camera.shakeMagnitude = 9;
+        SoundFX.play("ultimate");
+
+        const ultDmg = (meta.baseDmg * 3.8 + p.baseAtk * 2.5) * p.dmgMult;
+        this.ultimateVfxList.push({
+          type: meta.type, x: p.x, y: p.y, timer: 1.15, maxTime: 1.15, color: meta.color
+        });
+
+        this.enemies.forEach(e => {
+          if (Math.hypot(e.x - p.x, e.y - p.y) < 480) {
+            this.dealDamageToEnemy(e, ultDmg, meta.type, 0.65, 80);
+          }
+        });
+      },
+
+      dealDamageToEnemy(enemy, rawDmg, moveType, bonusStatusChance = 0, knockback = 24) {
+        const eff = calcTypeMultiplier(moveType, enemy.data.type1, enemy.data.type2);
+        const isCrit = Math.random() < this.player.critRate;
+        const finalDmg = Math.round(rawDmg * eff * (isCrit ? 1.65 : 1.0));
+
+        enemy.hp -= finalDmg;
+        enemy.hitFlashTimer = 0.08;
+
+        const ang = Math.atan2(enemy.y - this.player.y, enemy.x - this.player.x);
+        enemy.x += Math.cos(ang) * (enemy.isBoss ? knockback * 0.12 : knockback);
+        enemy.y += Math.sin(ang) * (enemy.isBoss ? knockback * 0.12 : knockback);
+
+        this.spawnFloatingText(enemy.x, enemy.y - 12, `${finalDmg}`, eff > 1.1 ? "#F97316" : (isCrit ? "#FACC15" : "#FFFFFF"), isCrit ? 15 : 12);
+
+        if (enemy.hp <= 0) {
+          const idx = this.enemies.indexOf(enemy);
+          if (idx !== -1) this.handleEnemyDeath(enemy, idx);
+        }
+      },
+
+      handleEnemyDeath(e, idx) {
+        this.enemies.splice(idx, 1);
+        this.kills += 1;
+        this.saveData.stats.totalKills += 1;
+        this.saveData.pokedexCaught[e.id] = true;
+
+        if (e.isShiny) this.saveData.shinyUnlocked[e.id] = true;
+
+        this.gems.push({ x: e.x, y: e.y, val: e.isElite ? 45 : 14, color: e.isElite ? "#F59E0B" : "#38BDF8" });
+        const coins = Math.max(1, Math.round((e.isElite ? 25 : 3) * this.selectedDifficulty.coinMult));
+        this.runCoins += coins;
+        this.saveData.coins += coins;
+
+        if (e.isBoss) {
+          this.activeBoss = null;
+          this.weather = "clear";
+          document.getElementById("bossHudContainer").classList.add("hidden");
+          this.spawnMapLoot("evo_chest", e.x, e.y);
+
+          if (e.id === 150) {
+            this.saveData.stats.mewtwoDefeated += 1;
+            this.saveData.unlockedTrainers["red"] = true;
+            this.saveToStorage();
+            if (!this.secretMewSpawned) {
+              this.secretMewSpawned = true;
+              this.spawnBoss(151, false);
+            }
+          } else if (e.id === 151) {
+            this.triggerGameOver(true);
+          }
+        }
+      },
+
+      gainExp(amount) {
+        const p = this.player;
+        p.exp += amount;
+        if (p.exp >= p.nextExp) {
+          p.exp -= p.nextExp;
+          p.level += 1;
+          p.nextExp = Math.round(p.nextExp * 1.20 + 10);
+          SoundFX.play("levelup");
+
+          if (p.data.evo_level !== "None" && p.level >= 16) {
+            if (p.id === 133) {
+              this.state = "PAUSED";
+              document.getElementById("eevee-evo-modal").classList.remove("hidden");
+              return;
+            } else if (p.data.evo_to) {
+              this.evolvePlayerPokemon(p.data.evo_to);
+            }
+          }
+          this.openLevelUpModal();
+        }
+      },
+
+      evolvePlayerPokemon(targetId) {
+        const p = this.player;
+        const nextData = POKEMON_MAP.get(targetId);
+        if (!nextData) return;
+        p.id = nextData.id;
+        p.data = nextData;
+        p.maxHp = Math.round(p.maxHp * 1.35);
+        p.hp = p.maxHp;
+        this.saveData.stats.evolutions += 1;
+        this.saveData.pokedexCaught[nextData.id] = true;
+        SoundFX.play("levelup");
+        this.showCutsceneBanner(`[進化之光] 進化成了【${nextData.name_zh}】！`, "生命全滿，基礎能力大幅躍升！", 2800);
+      },
+
+      openLevelUpModal() {
+        this.state = "PAUSED";
+        const p = this.player;
+        const choices = [];
+
+        Object.values(p.skills).forEach(sk => {
+          const meta = SKILLS_CATALOG[sk.id];
+          if (sk.level >= 10 && !sk.evolved && meta && (!meta.reqItem || p.heldItems[meta.reqItem])) {
+            choices.push({
+              title: meta.evolvedName, badge: "究極超武",
+              sprite: meta.sprite, desc: meta.evoDesc,
+              rarityClass: "rarity-legendary",
+              apply: () => { sk.evolved = true; }
+            });
+          }
+        });
+
+        Object.values(p.skills).forEach(sk => {
+          if (sk.level < 10 && choices.length < 3) {
+            const meta = SKILLS_CATALOG[sk.id];
+            choices.push({
+              title: `${meta.name} Lv.${sk.level + 1}`, badge: "招式升級",
+              sprite: meta.sprite, desc: getSkillNextLevelBonusDesc(sk.level + 1),
+              rarityClass: "rarity-common",
+              apply: () => { sk.level += 1; }
+            });
+          }
+        });
+
+        while (choices.length < 3) {
+          choices.push({
+            title: "蛋白藥劑", badge: "全傷提升",
+            sprite: ITEM_SPRITES.protein, desc: "全招式傷害永久提升 +8%！",
+            rarityClass: "rarity-common",
+            apply: () => { p.dmgMult *= 1.08; }
+          });
+        }
+
+        this._currentUpgradeChoices = choices;
+        const container = document.getElementById("upgradeChoicesContainer");
+        container.innerHTML = choices.map((c, idx) => `
+          <div onclick="GameApp.selectUpgradeChoice(${idx})" class="poke-card ${c.rarityClass} p-3 flex items-center justify-between gap-3 cursor-pointer hover:border-blue-500">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <img src="${c.sprite}" class="w-10 h-10 pixel-sprite object-contain shrink-0" alt="icon" />
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-black text-xs sm:text-sm text-slate-800 truncate">${c.title}</span>
+                  <span class="px-1.5 py-0.2 bg-blue-600 text-white text-[9px] font-black rounded-full shrink-0">${c.badge}</span>
+                </div>
+                <p class="text-[11px] font-bold text-slate-600 truncate mt-0.5">${c.desc}</p>
+              </div>
+            </div>
+            <button class="poke-btn-red px-3 py-1 text-xs font-black shrink-0">選擇</button>
+          </div>
+        `).join("");
+
+        document.getElementById("levelUpModal").classList.remove("hidden");
+      },
+
+      selectUpgradeChoice(idx) {
+        if (this._currentUpgradeChoices && this._currentUpgradeChoices[idx]) {
+          this._currentUpgradeChoices[idx].apply();
+        }
+        document.getElementById("levelUpModal").classList.add("hidden");
+        this.state = "PLAYING";
+        this.refreshHUD();
+      },
+
+      getTerrainAt(x, y) {
+        const cx = Math.floor(x / 600);
+        const cy = Math.floor(y / 600);
+        const chunk = BiomeChunkBuilder.getBiomeChunk(this.selectedStage.id, cx, cy);
+
+        if (this.selectedStage.id === "cerulean_bay") {
+          for (const pier of chunk.piers) {
+            if (x >= pier.x && x <= pier.x + pier.w && y >= pier.y && y <= pier.y + pier.h) {
+              return { speedMult: 1.0, label: "木棧道", inWater: false };
+            }
+          }
+          return { speedMult: 0.60, label: "深水浪花減速 (-40%)", inWater: true };
+        }
+
+        if (this.selectedStage.id === "sky_pillar") {
+          for (const g of chunk.grassTiles) {
+            if (g.isPsychicWell && x >= g.x && x <= g.x + g.w && y >= g.y && y <= g.y + g.h) {
+              return { speedMult: 0.75, label: "超能重力陣", inWater: false };
+            }
+          }
+        }
+
+        for (const g of chunk.grassTiles) {
+          if (x >= g.x && x <= g.x + g.w && y >= g.y && y <= g.y + g.h) {
+            return { speedMult: 0.80, label: "高草叢減速 (-20%)", inWater: false };
+          }
+        }
+
+        return { speedMult: 1.0, label: "", inWater: false };
+      },
+
+      resolveCollisions(ent, radius) {
+        const cx = Math.floor(ent.x / 600);
+        const cy = Math.floor(ent.y / 600);
+
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            const chunk = BiomeChunkBuilder.getBiomeChunk(this.selectedStage.id, cx + dx, cy + dy);
+
+            for (const ob of chunk.obstacles) {
+              const nearX = Math.max(ob.x, Math.min(ent.x, ob.x + ob.w));
+              const nearY = Math.max(ob.y, Math.min(ent.y, ob.y + ob.h));
+              const distX = ent.x - nearX;
+              const distY = ent.y - nearY;
+              const distSq = distX * distX + distY * distY;
+              if (distSq < radius * radius) {
+                const d = Math.sqrt(distSq) || 0.001;
+                ent.x += (distX / d) * (radius - d);
+                ent.y += (distY / d) * (radius - d);
+              }
+            }
+
+            for (const ledge of chunk.ledges) {
+              if (ent.x >= ledge.x - 8 && ent.x <= ledge.x + ledge.w + 8) {
+                if (ent === this.player) {
+                  if (ent.y >= ledge.y - 12 && ent.y <= ledge.y && ent.vy > 0) {
+                    ent.isJumpingLedge = true;
+                    ent.jumpTimer = 0.22;
+                  } else if (ent.y >= ledge.y && ent.y <= ledge.y + ledge.h + 8 && ent.vy < 0) {
+                    ent.y = ledge.y + ledge.h + 8;
+                  }
+                } else if (!ent.isBoss) {
+                  if (ent.y >= ledge.y - 12 && ent.y <= ledge.y && this.player.y > ent.y) {
+                    ent.y += 24;
+                  } else if (ent.y >= ledge.y && ent.y <= ledge.y + ledge.h + 8 && this.player.y < ent.y) {
+                    ent.y = ledge.y + ledge.h + 8;
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+
+      renderCombat() {
+        const ctx = this.ctx;
+        ctx.clearRect(0, 0, this.width, this.height);
+        if (!this.player) return;
+
+        let shakeX = 0, shakeY = 0;
+        if (this.camera.shakeTime > 0) {
+          shakeX = (Math.random() - 0.5) * this.camera.shakeMagnitude * 2;
+          shakeY = (Math.random() - 0.5) * this.camera.shakeMagnitude * 2;
+        }
+        const camX = this.camera.x + shakeX;
+        const camY = this.camera.y + shakeY;
+        const toSx = (wx) => wx - camX + this.width / 2;
+        const toSy = (wy) => wy - camY + this.height / 2;
+
+        const tileSize = 60;
+        const startTx = Math.floor((camX - this.width / 2) / tileSize) - 1;
+        const endTx = Math.floor((camX + this.width / 2) / tileSize) + 1;
+        const startTy = Math.floor((camY - this.height / 2) / tileSize) - 1;
+        const endTy = Math.floor((camY + this.height / 2) / tileSize) + 1;
+
+        for (let tx = startTx; tx <= endTx; tx++) {
+          for (let ty = startTy; ty <= endTy; ty++) {
+            const isDark = ((tx + ty) & 1) === 0;
+            const sx = tx * tileSize - camX + this.width / 2;
+            const sy = ty * tileSize - camY + this.height / 2;
+            const tileImg = TileTextureCache.getTile(this.selectedStage.id, isDark);
+            ctx.drawImage(tileImg, sx, sy);
+          }
+        }
+
+        const startCx = Math.floor((camX - this.width / 2) / 600) - 1;
+        const endCx = Math.floor((camX + this.width / 2) / 600) + 1;
+        const startCy = Math.floor((camY - this.height / 2) / 600) - 1;
+        const endCy = Math.floor((camY + this.height / 2) / 600) + 1;
+        const now = performance.now() * 0.003;
+
+        for (let cx = startCx; cx <= endCx; cx++) {
+          for (let cy = startCy; cy <= endCy; cy++) {
+            const chunk = BiomeChunkBuilder.getBiomeChunk(this.selectedStage.id, cx, cy);
+
+            chunk.piers.forEach(r => {
+              const rx = toSx(r.x); const ry = toSy(r.y);
+              ctx.fillStyle = this.selectedStage.roadColor;
+              ctx.fillRect(rx, ry, r.w, r.h);
+              ctx.strokeStyle = this.selectedStage.roadBorder;
+              ctx.lineWidth = 2;
+              ctx.strokeRect(rx, ry, r.w, r.h);
+            });
+
+            chunk.ledges.forEach(l => {
+              const lx = toSx(l.x); const ly = toSy(l.y);
+              ctx.fillStyle = "#B45309";
+              ctx.fillRect(lx, ly, l.w, l.h * 0.45);
+              ctx.fillStyle = "#78350F";
+              ctx.fillRect(lx, ly + l.h * 0.45, l.w, l.h * 0.55);
+            });
+
+            chunk.grassTiles.forEach(g => {
+              const gx = toSx(g.x); const gy = toSy(g.y);
+              if (g.isPsychicWell) {
+                const cx = toSx(g.x + g.w / 2);
+                const cy = toSy(g.y + g.h / 2);
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.strokeStyle = "rgba(244, 114, 182, 0.85)";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 75, 40, 0, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+              } else {
+                ctx.fillStyle = this.selectedStage.slowZoneColor;
+                ctx.beginPath();
+                ctx.roundRect(gx, gy, g.w, g.h, 12);
+                ctx.fill();
+              }
+            });
+
+            chunk.obstacles.forEach(ob => {
+              const ox = toSx(ob.x); const oy = toSy(ob.y);
+              ctx.fillStyle = "rgba(15,23,42,0.35)";
+              ctx.fillRect(ox + 4, oy + 6, ob.w, ob.h);
+
+              if (ob.kind === "house") {
+                ctx.fillStyle = "#FEF3C7";
+                ctx.strokeStyle = "#1C1E38";
+                ctx.lineWidth = 2.5;
+                ctx.fillRect(ox, oy + 26, ob.w, ob.h - 26);
+                ctx.strokeRect(ox, oy + 26, ob.w, ob.h - 26);
+                ctx.fillStyle = "#DC2626";
+                ctx.beginPath();
+                ctx.moveTo(ox - 6, oy + 30);
+                ctx.lineTo(ox + ob.w / 2, oy);
+                ctx.lineTo(ox + ob.w + 6, oy + 30);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke();
+              } else {
+                ctx.fillStyle = "#78350F";
+                ctx.fillRect(ox + ob.w * 0.38, oy + ob.h * 0.55, ob.w * 0.24, ob.h * 0.45);
+                ctx.fillStyle = "#15803D";
+                ctx.beginPath();
+                ctx.arc(ox + ob.w / 2, oy + ob.h * 0.42, ob.w * 0.46, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            });
+          }
+        }
+
+        this.gems.forEach(g => {
+          const sx = toSx(g.x); const sy = toSy(g.y);
+          ctx.fillStyle = g.color;
+          ctx.beginPath();
+          ctx.arc(sx, sy, 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        const p = this.player;
+        const px = toSx(p.x);
+        const py = toSy(p.y);
+
+        if (p.buffTimer > 0 || p.shieldTimer > 0) {
+          const timer = p.buffTimer > 0 ? p.buffTimer : p.shieldTimer;
+          const maxT = p.buffTimer > 0 ? 6.0 : 5.0;
+          const pct = Math.max(0, timer / maxT);
+          const isEnding = timer < 1.5;
+          const blinkAlpha = isEnding ? (Math.sin(performance.now() * 0.02) > 0 ? 1 : 0.3) : 1;
+
+          ctx.save();
+          ctx.strokeStyle = `rgba(245, 158, 11, ${blinkAlpha})`;
+          ctx.lineWidth = 3.5;
+          ctx.beginPath();
+          ctx.arc(px, py, 32, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct, false);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        const sprUrl = p.facingY < 0 ? p.data.back_sprite : p.data.forward_sprite;
+        const pRec = SpriteCache.get(sprUrl);
+        if (pRec && pRec.loaded) {
+          ctx.save();
+          ctx.translate(px, py);
+          if (p.facingX > 0) ctx.scale(-1, 1);
+          if (p.hitFlashTimer > 0) ctx.filter = "brightness(3)";
+          ctx.drawImage(pRec.img, -26, -26, 52, 52);
+          ctx.restore();
+        }
+
+        this.enemies.forEach(e => {
+          const esx = toSx(e.x); const esy = toSy(e.y);
+          const eRec = SpriteCache.get(e.data.forward_sprite);
+          if (eRec && eRec.loaded) {
+            ctx.save();
+            ctx.translate(esx, esy);
+            if (e.facingX > 0) ctx.scale(-1, 1);
+            if (e.hitFlashTimer > 0) ctx.filter = "brightness(3)";
+            const sz = e.isBoss ? 96 : 48;
+            ctx.drawImage(eRec.img, -sz / 2, -sz / 2, sz, sz);
+            ctx.restore();
+          }
+        });
+
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        this.projectiles.forEach(pr => {
+          const sx = toSx(pr.x); const sy = toSy(pr.y);
+          ctx.fillStyle = pr.color;
+          ctx.beginPath();
+          ctx.arc(sx, sy, pr.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#FFFFFF";
+          ctx.beginPath();
+          ctx.arc(sx, sy, pr.radius * 0.45, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+
+        this.floatingTexts.forEach(ft => {
+          ctx.save();
+          ctx.font = `900 ${ft.size}px sans-serif`;
+          ctx.fillStyle = ft.color;
+          ctx.fillText(ft.text, toSx(ft.x), toSy(ft.y));
+          ctx.restore();
+        });
+
+        if (this.cutinTimer > 0 && this.cutinTrainer) {
+          ctx.save();
+          const tr = this.cutinTrainer;
+          ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+          ctx.fillRect(0, this.height * 0.38, this.width, 96);
+          ctx.strokeStyle = tr.bondColor || "#FFCB05";
+          ctx.lineWidth = 3;
+          ctx.strokeRect(0, this.height * 0.38, this.width, 96);
+
+          ctx.font = "900 24px 'Noto Sans TC', sans-serif";
+          ctx.fillStyle = tr.bondColor || "#FFCB05";
+          ctx.fillText(`【${tr.skillName}】`, this.width * 0.28, this.height * 0.38 + 55);
+          ctx.restore();
+        }
+      },
+
+      updateWeatherAndAmbiance(dt) {
+        if (this.weather === "rain" || this.weather === "thunder") {
+          this.rainOffset = (this.rainOffset + dt * 500) % 500;
+        }
+      },
+
+      updateTelegraphs(dt) {
+        for (let i = this.telegraphs.length - 1; i >= 0; i--) {
+          this.telegraphs[i].timer -= dt;
+          if (this.telegraphs[i].timer <= 0) this.telegraphs.splice(i, 1);
+        }
+      },
+
+      updateProjectiles(dt) {
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+          const pr = this.projectiles[i];
+          pr.x += pr.vx * dt;
+          pr.y += pr.vy * dt;
+          pr.life -= dt;
+
+          for (const e of this.enemies) {
+            if (!pr.hitSet.has(e) && Math.hypot(e.x - pr.x, e.y - pr.y) <= pr.radius + e.radius) {
+              pr.hitSet.add(e);
+              this.dealDamageToEnemy(e, pr.dmg, pr.type);
+              pr.pierce -= 1;
+              if (pr.pierce <= 0) break;
+            }
+          }
+          if (pr.life <= 0 || pr.pierce <= 0) this.projectiles.splice(i, 1);
+        }
+      },
+
+      updateMeleeEffects(dt) {
+        for (let i = this.meleeEffects.length - 1; i >= 0; i--) {
+          this.meleeEffects[i].timer -= dt;
+          if (this.meleeEffects[i].timer <= 0) this.meleeEffects.splice(i, 1);
+        }
+      },
+
+      updateUltimateVfx(dt) {
+        for (let i = this.ultimateVfxList.length - 1; i >= 0; i--) {
+          this.ultimateVfxList[i].timer -= dt;
+          if (this.ultimateVfxList[i].timer <= 0) this.ultimateVfxList.splice(i, 1);
+        }
+      },
+
+      updateEnemies(dt) {
+        const p = this.player;
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+          const e = this.enemies[i];
+          if (e.hitFlashTimer > 0) e.hitFlashTimer -= dt;
+
+          const dx = p.x - e.x; const dy = p.y - e.y;
+          const dist = Math.hypot(dx, dy) || 1;
+          e.x += (dx / dist) * e.speed * dt;
+          e.y += (dy / dist) * e.speed * dt;
+
+          if (dist < e.radius + 16 && p.invulnTimer <= 0) {
+            const dmg = Math.max(1, Math.round(e.atk * (p.shieldTimer > 0 ? 0.5 : 1.0)));
+            p.hp -= dmg;
+            p.invulnTimer = 0.5;
+            p.hitFlashTimer = 0.08;
+            this.spawnFloatingText(p.x, p.y - 18, `-${dmg}`, "#EF4444", 14);
+            if (p.hp <= 0) { this.triggerGameOver(false); return; }
+          }
+        }
+      },
+
+      updateLootAndGems(dt) {
+        const p = this.player;
+        for (let i = this.gems.length - 1; i >= 0; i--) {
+          const g = this.gems[i];
+          const d = Math.hypot(p.x - g.x, p.y - g.y);
+          if (d < p.magnetRadius) {
+            g.x += (p.x - g.x) * dt * 8;
+            g.y += (p.y - g.y) * dt * 8;
+          }
+          if (d < 20) {
+            this.gems.splice(i, 1);
+            this.gainExp(g.val);
+          }
+        }
+      },
+
+      updateParticlesAndTexts(dt) {
+        for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
+          const ft = this.floatingTexts[i];
+          ft.y -= 25 * dt;
+          ft.life = (ft.life || 0.75) - dt;
+          if (ft.life <= 0) this.floatingTexts.splice(i, 1);
+        }
+      },
+
+      spawnFloatingText(x, y, text, color = "#FFFFFF", size = 12) {
+        this.floatingTexts.push({ x, y, text, color, size, life: 0.75 });
+      },
+
+      refreshHUD() {
+        const p = this.player;
+        if (!p) return;
+
+        document.getElementById("hudPartnerName").textContent = p.data.name_zh;
+        document.getElementById("hudLevelText").textContent = `Lv.${p.level}`;
+        document.getElementById("hudHpBar").style.width = `${Math.max(0, (p.hp / p.maxHp) * 100)}%`;
+        document.getElementById("hudHpText").textContent = `${Math.ceil(p.hp)}/${p.maxHp}`;
+        document.getElementById("hudExpBar").style.width = `${Math.min(100, (p.exp / p.nextExp) * 100)}%`;
+
+        const mins = String(Math.floor(this.runTime / 60)).padStart(2, "0");
+        const secs = String(Math.floor(this.runTime % 60)).padStart(2, "0");
+        document.getElementById("hudTimer").textContent = `${mins}:${secs}`;
+        document.getElementById("hudKills").textContent = this.kills;
+        document.getElementById("hudCoins").textContent = this.runCoins;
+
+        const cdOverlay = document.getElementById("trainerSkillCdOverlay");
+        const activeOverlay = document.getElementById("trainerSkillActiveOverlay");
+        const btn = document.getElementById("btnTrainerActiveSkill");
+
+        if (p.trainerSkillActiveTimer > 0) {
+          activeOverlay.classList.remove("hidden");
+          cdOverlay.classList.add("hidden");
+          btn.className = "tactical-btn-active relative w-18 h-18 sm:w-20 sm:h-20 rounded-full border-3 border-emerald-400 flex flex-col items-center justify-center overflow-hidden";
+          document.getElementById("trainerSkillActiveText").textContent = `ACTIVE ${Math.ceil(p.trainerSkillActiveTimer)}s`;
+        } else if (p.trainerSkillCd > 0) {
+          cdOverlay.classList.remove("hidden");
+          activeOverlay.classList.add("hidden");
+          btn.className = "relative w-18 h-18 sm:w-20 sm:h-20 rounded-full bg-slate-800 border-3 border-slate-700 flex flex-col items-center justify-center overflow-hidden opacity-90";
+          document.getElementById("trainerSkillCdText").textContent = `${Math.ceil(p.trainerSkillCd)}s`;
+        } else {
+          cdOverlay.classList.add("hidden");
+          activeOverlay.classList.add("hidden");
+          btn.className = "tactical-btn-ready relative w-18 h-18 sm:w-20 sm:h-20 rounded-full bg-gradient-to-b from-amber-300 via-amber-400 to-orange-500 border-3 border-slate-900 flex flex-col items-center justify-center overflow-hidden";
+        }
+      },
+
+      findNearestEnemyInViewport(ox, oy, range = 380) {
+        let best = null, bestD = range;
+        for (const e of this.enemies) {
+          const d = Math.hypot(e.x - ox, e.y - oy);
+          if (d < bestD) { bestD = d; best = e; }
+        }
+        return best;
+      },
+
       loop(timestamp) {
         const rawDt = Math.min(0.05, (timestamp - this.lastFrameTime) / 1000 || 0.016);
         this.lastFrameTime = timestamp;
