@@ -2153,6 +2153,27 @@
         this.renderPokedexGrid();
       },
 
+      claimAllPokedexRewards() {
+        let claimedCount = 0;
+        POKEMON_DB.forEach(pk => {
+          if (this.saveData.pokedexCaught[pk.id] && !this.saveData.pokedexRewardClaimed[pk.id]) {
+            this.saveData.pokedexRewardClaimed[pk.id] = true;
+            this.saveData.coins += 50;
+            claimedCount++;
+          }
+        });
+
+        if (claimedCount > 0) {
+          SoundFX.play("levelup");
+          this.saveToStorage();
+          this.renderPokedexGrid();
+          this.updateTitleUI();
+          alert(`成功一鍵領取 ${claimedCount} 隻寶可夢的賞金，獲得 +${claimedCount * 50} 代幣！`);
+        } else {
+          alert("目前沒有可領取的圖鑑賞金！");
+        }
+      },
+
       renderPokedexGrid() {
         const grid = document.getElementById("pokedexGrid");
         grid.innerHTML = POKEMON_DB.map(p => {
