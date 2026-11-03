@@ -45,7 +45,34 @@
     @keyframes floatSlow { 0%, 100% { transform: translateY(0px) rotate(-1.5deg); } 50% { transform: translateY(-6px) rotate(1deg); } }
     .float-banner { animation: floatSlow 3.2s infinite ease-in-out; }
     @keyframes pulseRing { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 203, 5, 0.7), 0 6px 16px rgba(0,0,0,0.45); } 50% { box-shadow: 0 0 0 8px rgba(255, 203, 5, 0), 0 6px 16px rgba(0,0,0,0.45); } }
-    .tactical-btn-ready { animation: pulseRing 2s infinite; }
+    /*.tactical-btn-ready { animation: pulseRing 2s infinite; }*/
+    @keyframes tacticalPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 203, 5, 0.8), 0 0 15px rgba(245, 158, 11, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.5);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 0 12px rgba(255, 203, 5, 0), 0 0 25px rgba(245, 158, 11, 0.9), inset 0 0 15px rgba(255, 255, 255, 0.8);
+        transform: scale(1.06);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 203, 5, 0.8), 0 0 15px rgba(245, 158, 11, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.5);
+        transform: scale(1);
+      }
+    }
+    .tactical-btn-ready { 
+      animation: tacticalPulse 1.4s infinite cubic-bezier(0.4, 0, 0.6, 1);
+      filter: drop-shadow(0 0 8px rgba(255, 203, 5, 0.9));
+    }
+
+    @keyframes skillTriggerFlash {
+      0% { transform: scale(1); filter: brightness(1); }
+      50% { transform: scale(0.88) rotate(-6deg); filter: brightness(2.2) drop-shadow(0 0 20px #FFCB05); }
+      100% { transform: scale(1); filter: brightness(1); }
+    }
+    .skill-trigger-anim {
+      animation: skillTriggerFlash 0.35s ease-out;
+    }
 
     .poke-panel { background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%); border: 3px solid var(--poke-border); border-radius: 18px; box-shadow: 0 6px 0 rgba(30, 41, 59, 0.25), 0 12px 28px rgba(15, 23, 42, 0.25); }
     .poke-header-red { background: linear-gradient(135deg, #EE1515 0%, #DC2626 65%, #F43F5E 100%); border-bottom: 3px solid var(--poke-border); color: #FFFFFF; }
@@ -2316,6 +2343,13 @@
         if (this.state !== "PLAYING" || !this.player) return;
         if (this.player.trainerSkillCd > 0) return;
 
+        // 加入發動時的按鈕炫光動畫類別
+        const btnEl = document.getElementById("btnTrainerActiveSkill");
+        if (btnEl) {
+          btnEl.classList.add("skill-trigger-anim");
+          setTimeout(() => btnEl.classList.remove("skill-trigger-anim"), 350);
+        }
+        
         const tr = this.selectedTrainer;
         const p = this.player;
         p.trainerSkillCd = p.trainerSkillMaxCd;
