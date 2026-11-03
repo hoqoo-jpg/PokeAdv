@@ -13,7 +13,6 @@
     :root {
       --pixel-font: 'Press Start 2P', 'Noto Sans TC', monospace;
       --body-font: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
-      /* 升級版去髒黑高級調色板 */
       --poke-red: #E63946;
       --poke-red-dark: #9B1C28;
       --poke-amber: #F59E0B;
@@ -26,7 +25,6 @@
       user-select: none; 
       -webkit-user-select: none; 
       -webkit-touch-callout: none;
-      touch-action: none;
     }
     body, html { 
       margin: 0; padding: 0; width: 100%; height: 100%; 
@@ -34,11 +32,11 @@
       font-family: var(--body-font); color: #1e293b; 
     }
     .font-pixel { font-family: var(--pixel-font); letter-spacing: 0.02em; }
-    canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+    canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; touch-action: none; }
     .pixel-sprite { image-rendering: pixelated; filter: drop-shadow(0 3px 4px rgba(28, 30, 56, 0.35)); }
     .shiny-sprite-filter { filter: hue-rotate(48deg) saturate(1.8) brightness(1.15) drop-shadow(0 0 8px #F59E0B); }
 
-    /* 動態虛擬搖桿 DOM 樣式 (源自 Sandbox V11) */
+    /* 動態虛擬搖桿 DOM */
     #touchJoyBase {
       position: absolute;
       width: 110px; height: 110px;
@@ -64,7 +62,6 @@
       display: none;
     }
 
-    /* 標題與標誌高級立體文字 */
     .adventure-logo-yellow {
       background: linear-gradient(180deg, #FFF04D 0%, #FFCB05 48%, #D97706 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
@@ -95,7 +92,6 @@
       background: linear-gradient(180deg, #34D399 0%, #059669 100%) !important;
     }
 
-    /* 遊戲視窗底板與卡片樣式 */
     .poke-panel {
       background: var(--poke-panel-bg);
       border: 3px solid var(--poke-border);
@@ -127,19 +123,18 @@
       transform: translateY(-2px);
     }
 
-    /* 稀有度邊框 */
     .rarity-common { border: 2.5px solid #94A3B8; background: #FFFFFF; box-shadow: 0 4px 0 #CBD5E1; }
     .rarity-rare { border: 3px solid #2563EB; background: #EFF6FF; box-shadow: 0 4px 0 #1D4ED8; }
     .rarity-epic { border: 3px solid #9333EA; background: #FAF5FF; box-shadow: 0 4px 0 #7E22CE; }
     .rarity-legendary { border: 3.5px solid #F59E0B; background: #FFFDF0; box-shadow: 0 5px 0 #B45309; }
 
-    /* 按鈕體系 */
     .poke-btn-red {
       background: linear-gradient(180deg, #F87171 0%, var(--poke-red) 100%);
       border: 2.5px solid var(--poke-border);
       border-radius: 9999px;
       color: #FFFFFF;
       box-shadow: 0 3px 0 var(--poke-border);
+      cursor: pointer;
     }
     .poke-btn-red:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--poke-border); }
     .poke-btn-yellow {
@@ -148,6 +143,7 @@
       border-radius: 9999px;
       color: #1C1E38;
       box-shadow: 0 3px 0 var(--poke-border);
+      cursor: pointer;
     }
     .poke-btn-yellow:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--poke-border); }
     .poke-btn-blue {
@@ -156,6 +152,7 @@
       border-radius: 9999px;
       color: #FFFFFF;
       box-shadow: 0 3px 0 var(--poke-border);
+      cursor: pointer;
     }
     .poke-btn-white {
       background: #FFFFFF;
@@ -163,6 +160,7 @@
       border-radius: 9999px;
       color: #1C1E38;
       box-shadow: 0 2.5px 0 #CBD5E1;
+      cursor: pointer;
     }
     .poke-btn-white:active:not(:disabled) { transform: translateY(1.5px); box-shadow: 0 1px 0 #CBD5E1; }
   </style>
@@ -172,7 +170,7 @@
   <!-- 60FPS 主 CANVAS -->
   <canvas id="gameCanvas" class="absolute inset-0 z-0"></canvas>
 
-  <!-- 動態虛擬搖桿 (支援觸碰浮現) -->
+  <!-- 動態虛擬搖桿 -->
   <div id="touchJoyBase"></div>
   <div id="touchJoyStick"></div>
 
@@ -197,8 +195,8 @@
     </div>
   </div>
 
-  <!-- 2. 動態封面歡迎畫面 -->
-  <div id="splashScreen" onclick="GameApp.enterLobbyFromSplash()" class="hidden absolute inset-0 z-40 bg-gradient-to-b from-slate-950/45 via-transparent to-slate-950/60 flex flex-col items-center justify-between p-4 sm:p-8 cursor-pointer overflow-hidden">
+  <!-- 2. 動態封面歡迎畫面 (背景背後實時演算地圖與小怪巡邏) -->
+  <div id="splashScreen" onclick="GameApp.enterLobbyFromSplash()" class="hidden absolute inset-0 z-40 bg-gradient-to-b from-slate-950/30 via-transparent to-slate-950/50 flex flex-col items-center justify-between p-4 sm:p-8 cursor-pointer overflow-hidden">
     <div class="w-full max-w-4xl flex justify-between items-center pointer-events-none mt-1">
       <div class="flex items-center gap-2 bg-slate-900/85 text-white px-3.5 py-1 rounded-full border-2 border-amber-400 shadow-lg">
         <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="w-5 h-5 pixel-sprite" alt="ball" />
@@ -250,12 +248,10 @@
     </div>
   </div>
 
-  <!-- 3. 戰鬥中 HUD 層 (手機端視野優化版) -->
+  <!-- 3. 戰鬥中 HUD 層 -->
   <div id="hudLayer" class="hidden absolute inset-0 z-20 pointer-events-none flex flex-col justify-between p-2 sm:p-3">
-    <!-- 頂部資訊條 -->
     <div class="w-full space-y-1.5 pointer-events-auto">
       <div class="flex items-start justify-between gap-1.5">
-        <!-- 左上角玩家核心狀態 (常駐精簡) -->
         <div class="flex flex-col gap-1 max-w-[62%] sm:max-w-md">
           <div class="poke-hud-box px-2.5 py-1.5 flex items-center gap-2">
             <div class="relative flex items-center -space-x-2 shrink-0">
@@ -289,7 +285,6 @@
             </div>
           </div>
 
-          <!-- 次級資訊 (手機端自動縮合) -->
           <div class="flex items-center gap-1 flex-wrap">
             <div id="hudSkillList" class="flex items-center gap-1 flex-wrap"></div>
             <div id="hudHeldItemList" class="flex items-center gap-1 flex-wrap"></div>
@@ -304,7 +299,6 @@
           </div>
         </div>
 
-        <!-- 右上角計時、賞金與控制按鈕 (觸控熱區 >= 44px) -->
         <div class="flex flex-col items-end gap-1 shrink-0">
           <div class="poke-hud-box px-3 py-1 flex items-center gap-2">
             <div id="hudTimer" class="font-pixel text-xs sm:text-base text-slate-800 whitespace-nowrap">00:00</div>
@@ -328,7 +322,6 @@
             </button>
           </div>
 
-          <!-- 調試下拉菜單 (8分鐘快進版) -->
           <div id="debugDropdown" class="hidden poke-hud-box p-2 flex flex-col gap-1 text-[10px] w-48 shadow-xl border-blue-600 bg-white/95">
             <div class="font-black text-blue-700 border-b pb-0.5 mb-0.5 flex justify-between items-center">
               <span>8分鐘調試面板</span>
@@ -347,26 +340,23 @@
         </div>
       </div>
 
-      <!-- 中央劇情橫幅通知 -->
       <div id="cutsceneBanner" class="hidden mx-auto max-w-md poke-hud-box px-3.5 py-1.5 border-2 border-amber-400 bg-white/95 text-center shadow-lg">
         <div id="cutsceneTitle" class="font-black text-xs sm:text-sm text-red-600"></div>
         <div id="cutsceneSubtitle" class="text-[11px] text-slate-600 font-bold"></div>
       </div>
     </div>
 
-    <!-- 右下角黃金操作區：三態化大招按鈕 (安全區域固定) -->
+    <!-- 右下角黃金操作區：三態化大招按鈕 -->
     <div class="pointer-events-auto fixed right-4 bottom-6 sm:right-6 sm:bottom-8 z-30 flex flex-col items-center">
       <button id="btnTrainerActiveSkill" onclick="GameApp.triggerTrainerActiveSkill()" class="tactical-btn-ready relative w-18 h-18 sm:w-20 sm:h-20 rounded-full bg-gradient-to-b from-amber-300 via-amber-400 to-orange-500 border-3 border-slate-900 flex flex-col items-center justify-center overflow-hidden active:scale-95 transition-transform shadow-xl">
         <img id="hudActiveTrainerImg" src="" class="w-9 h-9 sm:w-11 sm:h-11 pixel-sprite object-contain" alt="trainerSkill" />
         <span id="hudActiveSkillName" class="text-[8px] sm:text-[9px] font-black text-slate-900 bg-white/95 px-1.5 rounded-full border border-slate-700 truncate max-w-[90%]">戰術指令</span>
         <span class="text-[7px] font-pixel text-slate-950 mt-0.5">[SPACE]</span>
         
-        <!-- 冷卻遮罩 -->
         <div id="trainerSkillCdOverlay" class="hidden absolute inset-0 bg-slate-950/80 flex flex-col items-center justify-center text-white">
           <span id="trainerSkillCdText" class="font-pixel text-xs sm:text-sm text-amber-300">25s</span>
           <span class="text-[8px] font-bold text-slate-300">冷卻中</span>
         </div>
-        <!-- 生效中遮罩 -->
         <div id="trainerSkillActiveOverlay" class="hidden absolute inset-0 bg-emerald-950/75 flex flex-col items-center justify-center text-white">
           <span id="trainerSkillActiveText" class="font-pixel text-xs sm:text-sm text-emerald-300">ACTIVE 6s</span>
           <span class="text-[8px] font-bold text-emerald-100">生效中!</span>
@@ -424,19 +414,18 @@
     </div>
   </div>
 
-  <!-- 5. 升級三選一卡片 (手機端橫向緊湊條列式改造) -->
+  <!-- 5. 升級三選一卡片 (橫向緊湊條列式) -->
   <div id="levelUpModal" class="hidden absolute inset-0 z-40 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
     <div class="poke-panel w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
       <div class="poke-header-red px-4 py-2.5 text-center shrink-0">
         <div class="font-pixel text-amber-300 text-sm sm:text-base">LEVEL UP! 選擇一項強化</div>
         <p class="text-[10px] sm:text-xs text-white font-bold mt-0.5">8 分鐘快局 ‧ 滿級 Lv.10 突破究極超武</p>
       </div>
-      <!-- 支援手機端直屏單手秒選的三選一容器 -->
       <div id="upgradeChoicesContainer" class="p-3 sm:p-4 bg-slate-50 overflow-y-auto flex flex-col gap-2.5"></div>
     </div>
   </div>
 
-  <!-- 6. 151 全圖鑑 (加入橫向屬性頁籤分類) -->
+  <!-- 6. 151 全圖鑑 (帶屬性頁籤) -->
   <div id="pokedexModal" class="hidden absolute inset-0 z-40 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-4">
     <div class="poke-panel w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
       <div class="poke-header-red px-4 py-2.5 flex items-center justify-between gap-2 shrink-0">
@@ -455,22 +444,21 @@
         </div>
       </div>
 
-      <!-- 橫向滑動屬性分類頁籤 -->
       <div id="pokedexFilterTabs" class="flex items-center gap-1.5 px-3 py-2 bg-slate-100 border-b border-slate-300 overflow-x-auto shrink-0 text-xs font-black">
-        <button onclick="GameApp.filterPokedex('ALL')" class="pokedex-tab px-3 py-1 rounded-full bg-blue-600 text-white shrink-0">全部 (151)</button>
-        <button onclick="GameApp.filterPokedex('Grass')" class="pokedex-tab px-2.5 py-1 rounded-full bg-slate-200 text-slate-700 shrink-0">草系</button>
-        <button onclick="GameApp.filterPokedex('Fire')" class="pokedex-tab px-2.5 py-1 rounded-full bg-slate-200 text-slate-700 shrink-0">火系</button>
-        <button onclick="GameApp.filterPokedex('Water')" class="pokedex-tab px-2.5 py-1 rounded-full bg-slate-200 text-slate-700 shrink-0">水系</button>
-        <button onclick="GameApp.filterPokedex('Electric')" class="pokedex-tab px-2.5 py-1 rounded-full bg-slate-200 text-slate-700 shrink-0">電系</button>
-        <button onclick="GameApp.filterPokedex('Psychic')" class="pokedex-tab px-2.5 py-1 rounded-full bg-slate-200 text-slate-700 shrink-0">超能</button>
-        <button onclick="GameApp.filterPokedex('CAUGHT')" class="pokedex-tab px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 shrink-0">已收服</button>
+        <button onclick="GameApp.filterPokedex('ALL')" id="tab_dex_ALL" class="pokedex-tab px-3 py-1 rounded-full bg-blue-600 text-white shrink-0">全部 (151)</button>
+        <button onclick="GameApp.filterPokedex('Grass')" id="tab_dex_Grass" class="pokedex-tab px-2.5 py-1 rounded-full bg-slate-200 text-slate-700 shrink-0">草系</button>
+        <button onclick="GameApp.filterPokedex('Fire')" id="tab_dex_Fire" class="pokedex-tab px-2.5 py-1 rounded-full bg-slate-200 text-slate-700 shrink-0">火系</button>
+        <button onclick="GameApp.filterPokedex('Water')" id="tab_dex_Water" class="pokedex-tab px-2.5 py-1 rounded-full bg-slate-200 text-slate-700 shrink-0">水系</button>
+        <button onclick="GameApp.filterPokedex('Electric')" id="tab_dex_Electric" class="pokedex-tab px-2.5 py-1 rounded-full bg-slate-200 text-slate-700 shrink-0">電系</button>
+        <button onclick="GameApp.filterPokedex('Psychic')" id="tab_dex_Psychic" class="pokedex-tab px-2.5 py-1 rounded-full bg-slate-200 text-slate-700 shrink-0">超能</button>
+        <button onclick="GameApp.filterPokedex('CAUGHT')" id="tab_dex_CAUGHT" class="pokedex-tab px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 shrink-0">已收服</button>
       </div>
 
       <div id="pokedexGrid" class="p-3 sm:p-4 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 bg-slate-50 flex-1"></div>
     </div>
   </div>
 
-  <!-- 7. 主大廳 (Lobby) 與 3步驟出發嚮導 -->
+  <!-- 7. 主大廳 -->
   <div id="titleScreen" class="hidden absolute inset-0 z-30 flex flex-col items-center justify-between p-4 bg-slate-900/50 backdrop-blur-[2px] overflow-y-auto">
     <div class="w-full max-w-5xl flex justify-between items-center gap-2 shrink-0">
       <button onclick="GameApp.backToSplash()" class="poke-hud-box px-3 py-1.5 flex items-center gap-1.5 text-xs font-black text-slate-700">
@@ -542,7 +530,7 @@
     </div>
   </div>
 
-  <!-- 8. 3步驟設定嚮導 (羈絆置頂與金色高光外框) -->
+  <!-- 8. 3步驟設定嚮導 -->
   <div id="setupModal" class="hidden absolute inset-0 z-30 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-5">
     <div class="poke-panel w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden">
       <div class="poke-header-red px-4 py-2.5 flex items-center justify-between gap-2 shrink-0">
@@ -642,7 +630,101 @@
       </div>
     </div>
   </div>
-<script>
+  <span id="titleCoinDisplay" class="font-pixel text-amber-500 text-xs sm:text-sm">800</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 掌機戰鬥台座中央展示窗 -->
+    <div class="poke-panel max-w-3xl w-full p-5 sm:p-7 text-center my-auto">
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 mb-2 rounded-full bg-red-600 text-white text-xs font-black">
+        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="w-4 h-4 pixel-sprite" alt="b" />
+        8分鐘極速節奏 ‧ GBA自然動態地貌 ‧ 瞬切立繪 ‧ 環形倒數規
+      </div>
+      <h1 class="font-black text-2xl sm:text-4xl text-slate-800 mb-1">寶可夢大冒險：大廳</h1>
+      <p class="text-xs sm:text-sm font-bold text-blue-700 mb-4">
+        攜帶「專屬代表寶可夢」享傷害+25%、攻速+20%！擊退 7.5 分鐘超夢解鎖【赤紅】！
+      </p>
+
+      <div class="flex items-center justify-center gap-6 my-3 bg-gradient-to-r from-amber-50 via-sky-50 to-emerald-50 py-3.5 px-4 rounded-2xl border-2 border-slate-300">
+        <div class="flex items-center gap-2.5">
+          <img id="lobbyTrainerPreview" src="images/Ash_01.png" class="w-14 h-14 sm:w-16 sm:h-16 pixel-sprite object-contain" alt="trainer" />
+          <div class="text-left">
+            <div class="text-[10px] font-black text-slate-500">隨行訓練員</div>
+            <div id="lobbyTrainerName" class="text-xs sm:text-sm font-black text-slate-800">小智 (Ash)</div>
+          </div>
+        </div>
+        <div class="px-2.5 py-1 rounded-full bg-amber-200 border-2 border-slate-800 text-[10px] font-black text-slate-900 shadow">並肩出戰</div>
+        <div class="flex items-center gap-2.5">
+          <img id="lobbyPokemonPreview" src="https://raw.githubusercontent.com/NightCatSama/pokedex/main/images/sprite/forward/25.png" class="w-14 h-14 sm:w-16 sm:h-16 pixel-sprite object-contain" alt="poke" />
+          <div class="text-left">
+            <div class="text-[10px] font-black text-slate-500">出戰精靈</div>
+            <div id="lobbyPokemonName" class="text-xs sm:text-sm font-black text-slate-800">皮卡丘 (#025)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+        <button onclick="GameApp.openSetupFlow()" class="poke-btn-red py-3 px-4 font-black text-sm sm:text-base flex items-center justify-center gap-2">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="w-5 h-5 pixel-sprite" alt="go" /> 開始冒險
+        </button>
+        <button onclick="GameApp.openPokedexModal()" class="poke-btn-yellow py-3 px-4 font-black text-sm sm:text-base flex items-center justify-center gap-2 relative">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/vs-seeker.png" class="w-5 h-5 pixel-sprite" alt="dex" /> 151全圖鑑
+          <span id="pokedexRewardBadge" class="hidden absolute -top-2 -right-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full border-2 border-white animate-bounce">領賞!</span>
+        </button>
+        <button onclick="GameApp.openSkillTreeModal()" class="poke-btn-blue py-3 px-4 font-black text-sm sm:text-base flex items-center justify-center gap-2">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/rare-candy.png" class="w-5 h-5 pixel-sprite" alt="tree" /> 寶可夢中心
+        </button>
+        <button onclick="GameApp.openAchievementModal()" class="poke-btn-white py-3 px-4 font-black text-sm sm:text-base flex items-center justify-center gap-2 relative">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/amulet-coin.png" class="w-5 h-5 pixel-sprite" alt="ach" /> 成就徽章館
+          <span id="achClaimBadge" class="hidden absolute -top-2 -right-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full border-2 border-white animate-bounce">!</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="poke-hud-box px-4 py-1.5 text-xs font-bold text-slate-700 text-center shrink-0">
+      沙盒 V11 超能重力陣 ‧ 木棧道拍岸海浪 ‧ 雙向跳崖 ‧ 暴雨/極光天候
+    </div>
+  </div>
+
+  <!-- 解鎖確認彈窗 -->
+  <div id="unlock-confirm-modal" class="hidden absolute inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="poke-panel w-full max-w-sm overflow-hidden text-center">
+      <div class="poke-header-red px-4 py-2.5 flex items-center justify-between">
+        <span id="unlockModalHeaderTitle" class="font-black text-sm text-white">解鎖確認</span>
+        <button onclick="GameApp.closeUnlockConfirmModal()" class="text-white font-black text-sm px-2">✕</button>
+      </div>
+      <div class="p-4 bg-white space-y-3">
+        <div id="unlockPreviewBox" class="flex items-center justify-center gap-4 py-2 bg-sky-50 rounded-2xl border-2 border-slate-200">
+          <div class="flex flex-col items-center">
+            <img id="unlockConfirmFrontImg" src="" class="w-16 h-16 pixel-sprite object-contain" alt="front" />
+            <span class="text-[10px] font-bold text-slate-500">正面</span>
+          </div>
+          <div id="unlockBackCol" class="flex flex-col items-center">
+            <img id="unlockConfirmBackImg" src="" class="w-16 h-16 pixel-sprite object-contain" alt="back" />
+            <span class="text-[10px] font-bold text-slate-500">背面</span>
+          </div>
+        </div>
+        <div>
+          <div id="unlockConfirmName" class="font-black text-base text-slate-800">皮卡丘 (#025)</div>
+          <div id="unlockConfirmTypes" class="flex justify-center gap-1 my-1"></div>
+        </div>
+        <div id="unlockConfirmStats" class="text-xs font-bold text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1"></div>
+        <div class="flex items-center justify-center gap-1.5 text-sm font-black text-amber-600 bg-amber-50 py-1.5 rounded-xl border border-amber-300">
+          <span>所需代幣：</span>
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/amulet-coin.png" class="w-4 h-4 pixel-sprite" alt="coin" />
+          <span id="unlockConfirmCost">200</span>
+        </div>
+        <p id="unlockConfirmError" class="hidden text-xs font-black text-red-600">代幣不足！可至圖鑑領取賞金！</p>
+        <div class="grid grid-cols-2 gap-2.5 pt-1">
+          <button onclick="GameApp.closeUnlockConfirmModal()" class="poke-btn-white py-2 text-xs font-black">取消</button>
+          <button id="btnConfirmUnlockAction" onclick="GameApp.confirmUnlockAction()" class="poke-btn-red py-2 text-xs font-black">確認解鎖</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
     /**
      * ============================================================================
      * 1. OFFICIAL ASSETS, TYPE MATRIX & ATTRIBUTE IMMUNITY (100% VISIBLE)
@@ -871,7 +953,7 @@
           right: "images/Ash_04.png"
         },
         skillName: "就決定是你了！",
-        skillCd: 25, // 原 45s 下調
+        skillCd: 25,
         duration: 6.0,
         bondName: "真新鎮的奇蹟",
         bondColor: "#FFCB05",
@@ -889,7 +971,7 @@
         cost: 0,
         sprite: "https://play.pokemonshowdown.com/sprites/trainers/misty.png",
         skillName: "華藍水幕推進",
-        skillCd: 28, // 原 50s 下調
+        skillCd: 28,
         duration: 4.5,
         bondName: "華藍人魚之歌",
         bondColor: "#38BDF8",
@@ -907,7 +989,7 @@
         cost: 0,
         sprite: "https://play.pokemonshowdown.com/sprites/trainers/brock.png",
         skillName: "尼比岩石壁壘",
-        skillCd: 30, // 原 55s 下調
+        skillCd: 30,
         duration: 5.0,
         bondName: "尼比岩壁守護",
         bondColor: "#D97706",
@@ -925,7 +1007,7 @@
         cost: 500,
         sprite: "https://play.pokemonshowdown.com/sprites/trainers/serena.png",
         skillName: "雙打應援星舞",
-        skillCd: 28, // 原 50s 下調
+        skillCd: 28,
         duration: 5.0,
         bondName: "閃耀舞台羈絆",
         bondColor: "#F472B6",
@@ -943,7 +1025,7 @@
         cost: 600,
         sprite: "https://play.pokemonshowdown.com/sprites/trainers/lillie.png",
         skillName: "傷藥緊急噴霧",
-        skillCd: 32, // 原 60s 下調
+        skillCd: 32,
         duration: 3.0,
         bondName: "冰星祈願共鳴",
         bondColor: "#A78BFA",
@@ -962,7 +1044,7 @@
         isHiddenRed: true,
         sprite: "https://play.pokemonshowdown.com/sprites/trainers/red.png",
         skillName: "白銀山王牌號令",
-        skillCd: 28, // 原 50s 下調
+        skillCd: 28,
         duration: 6.5,
         bondName: "白銀山傳奇巔峰",
         bondColor: "#EF4444",
@@ -1106,11 +1188,6 @@
       return bonusMap[nextLv] || "全面提升招式威力與範圍";
     }
 
-    /**
-     * ============================================================================
-     * 5. 招式目錄 (全面重構三層能量流、白熱高光與超武法陣)
-     * ============================================================================
-     */
     const SKILLS_CATALOG = {
       "Flamethrower": { id: "Flamethrower", name: "噴射火焰", evolvedName: "大字爆炎・爆炸烈焰", type: "Fire", isMelee: false, vfx: "fire_stream", sprite: ITEM_SPRITES.charcoal, reqItem: "Charcoal", color: "#F08030", baseCd: 1.25, baseDmg: 26, desc: "噴射彗星烈焰流，三層白熱高光，附加【灼傷】。", evoDesc: "【全屏究極超武】旋轉金紅熔岩炎殺陣與 8 道螺旋火柱！" },
       "Water Gun":    { id: "Water Gun",    name: "水槍",     evolvedName: "巨浪加農水炮", type: "Water", isMelee: false, vfx: "water_beam", sprite: ITEM_SPRITES.mysticWater, reqItem: "MysticWater", color: "#38BDF8", baseCd: 1.15, baseDmg: 24, desc: "噴射高壓螺旋水箭與晶瑩泡沫，附加【水流減速】。", evoDesc: "【全屏究極超武】全屏掀起雙螺旋深藍逆時針水龍捲！" },
@@ -1130,7 +1207,6 @@
       "Poison Sting": { id: "Poison Sting", name: "毒針",     evolvedName: "劇毒蜂群", type: "Poison", isMelee: false, vfx: "needle_dart", sprite: ITEM_SPRITES.spellTag, reqItem: null, color: "#C084FC", baseCd: 0.95, baseDmg: 21, desc: "連射銳利紫晶毒針，附加【中毒】。", evoDesc: "劇毒蜂針雨！" },
       "Twineedle":    { id: "Twineedle",    name: "雙針",     evolvedName: "極限雙針", type: "Bug", isMelee: false, vfx: "needle_dart", sprite: ITEM_SPRITES.miracleSeed, reqItem: null, color: "#84CC16", baseCd: 0.92, baseDmg: 28, desc: "雙向極速貫穿翠綠光針，附加【中毒】。", evoDesc: "極限雙針風暴！" },
 
-      // 近戰招式 (帶有命中吸血補償 + 0.75秒無敵霸體)
       "Earthquake":     { id: "Earthquake",     name: "地震",     evolvedName: "大地脈動裂破", type: "Ground",   isMelee: true, meleeStyle: "quake_wave",   sprite: ITEM_SPRITES.protein, reqItem: null, color: "#D97706", baseCd: 1.70, baseDmg: 38, desc: "【近身震波】立體雙層深坑裂隙，飛石重擊並泥石減速！", evoDesc: "12道裂隙巨岩暴起地崩全屏！" },
       "Body Slam":      { id: "Body Slam",      name: "泰山壓頂", evolvedName: "極巨重壓震波", type: "Normal",   isMelee: true, meleeStyle: "slam_wave",    sprite: ITEM_SPRITES.protein, reqItem: null, color: "#F59E0B", baseCd: 1.60, baseDmg: 36, desc: "【近身重壓】爆發雙層金黃重壓波紋，附加【麻痺】！", evoDesc: "極巨泰山重壓！" },
       "Scratch":        { id: "Scratch",        name: "抓",       evolvedName: "暴走利爪連斬", type: "Normal",   isMelee: true, meleeStyle: "claw_slash",   sprite: ITEM_SPRITES.protein, reqItem: null, color: "#F8FAFC", baseCd: 0.98, baseDmg: 24, desc: "【階梯三段】純白利爪撕裂，尾端爆散打擊星芒！", evoDesc: "暴走利爪風暴！" },
@@ -1337,7 +1413,6 @@
     /**
      * ============================================================================
      * 7. GBA 地表紋理離線快取引擎 (OFFSCREEN TILE PRE-RENDER CACHE)
-     * 預先繪製 60x60 像素顆粒，消除高怪潮時的 Canvas 重複計算
      * ============================================================================
      */
     const TileTextureCache = {
@@ -1353,11 +1428,9 @@
         const octx = oc.getContext("2d");
         const stage = STAGES.find(s => s.id === stageId) || STAGES[0];
 
-        // 1. 基底填充
         octx.fillStyle = isDark ? stage.tileDark : stage.tileLight;
         octx.fillRect(0, 0, 60, 60);
 
-        // 2. 隨機草木雜點 / 碎石顆粒
         if (stageId === "pallet") {
           octx.fillStyle = isDark ? "#1E3D24" : "#244C2B";
           for (let i = 0; i < 4; i++) {
@@ -1388,7 +1461,8 @@
         return oc;
       }
     };
-/**
+
+    /**
      * ============================================================================
      * 8. GBA CHUNK BUILDER (整合沙盒 V11 完整地貌與自然動態物象)
      * ============================================================================
@@ -1529,7 +1603,6 @@
         return chunk;
       }
     };
-
     /**
      * ============================================================================
      * 9. MAIN GAME ENGINE (GameApp) - 8分鐘快局核心推進與全域渲染
@@ -1552,6 +1625,25 @@
       selectedDifficulty: DIFFICULTIES[1],
       selectedStage: STAGES[0],
       timeScale: 1,
+      pendingUnlockType: null,
+      pendingUnlockId: null,
+      pendingUnlockCost: 0,
+
+      // 封面 Logo 背景實時演算地圖與小怪巡邏
+      titleDemo: {
+        camX: 0,
+        camY: 0,
+        wildWanderers: [
+          { id: 25,  offsetX: 160,  offsetY: -80, phase: 0,   dir: 1 },
+          { id: 133, offsetX: 340,  offsetY: 75,  phase: 1.2, dir: -1 },
+          { id: 16,  offsetX: 520,  offsetY: -95, phase: 2.4, dir: 1 },
+          { id: 10,  offsetX: 240,  offsetY: 110, phase: 3.1, dir: 1 },
+          { id: 1,   offsetX: 680,  offsetY: 40,  phase: 4.0, dir: -1 },
+          { id: 4,   offsetX: 840,  offsetY: -70, phase: 5.2, dir: 1 },
+          { id: 7,   offsetX: 980,  offsetY: 90,  phase: 1.8, dir: -1 },
+          { id: 54,  offsetX: 1120, offsetY: -40, phase: 2.9, dir: 1 }
+        ]
+      },
 
       saveData: {
         coins: 800,
@@ -1572,12 +1664,8 @@
       partnerOrbitBase: 0,
       camera: { x: 0, y: 0, shakeTime: 0, shakeMagnitude: 0 },
 
-      // 動態天候與光影
       weather: "clear",
       rainOffset: 0,
-      lightningTimer: 0,
-      lightningFlashAlpha: 0,
-      splashParticles: [],
       cutinTimer: 0,
       cutinTrainer: null,
 
@@ -1779,7 +1867,6 @@
           this.keys[e.key.toLowerCase()] = false;
         });
 
-        // 虛擬搖桿與防誤觸大招區域判定
         const joyBase = document.getElementById("touchJoyBase");
         const joyStick = document.getElementById("touchJoyStick");
         const skillBtn = document.getElementById("btnTrainerActiveSkill");
@@ -1794,7 +1881,7 @@
           if (this.state !== "PLAYING") return;
           for (let i = 0; i < e.changedTouches.length; i++) {
             const t = e.changedTouches[i];
-            if (isOverSkillBtn(t.clientX, t.clientY)) continue; // 排除右下角大招按鈕
+            if (isOverSkillBtn(t.clientX, t.clientY)) continue;
 
             if (t.clientX < this.width * 0.65 && !this.touchInput.active) {
               this.touchInput.active = true;
@@ -1864,876 +1951,21 @@
         window.addEventListener("touchcancel", onTouchEnd);
       },
 
-      /**
-       * ============================================================================
-       * 10. 戰鬥核心碰撞、雙向地形與跳崖翻越邏輯
-       * ============================================================================
-       */
-      getTerrainAt(x, y) {
-        const cx = Math.floor(x / 600);
-        const cy = Math.floor(y / 600);
-        const chunk = BiomeChunkBuilder.getBiomeChunk(this.selectedStage.id, cx, cy);
-
-        if (this.selectedStage.id === "cerulean_bay") {
-          for (const pier of chunk.piers) {
-            if (x >= pier.x && x <= pier.x + pier.w && y >= pier.y && y <= pier.y + pier.h) {
-              return { speedMult: 1.0, label: "木棧道", inWater: false };
-            }
-          }
-          for (const isl of chunk.sandIslets) {
-            if (x >= isl.x && x <= isl.x + isl.w && y >= isl.y && y <= isl.y + isl.h) {
-              return { speedMult: 1.0, label: "避難砂島", inWater: false };
-            }
-          }
-          return { speedMult: 0.60, label: "深水浪花減速 (-40%)", inWater: true };
-        }
-
-        if (this.selectedStage.id === "sky_pillar") {
-          for (const g of chunk.grassTiles) {
-            if (g.isPsychicWell && x >= g.x && x <= g.x + g.w && y >= g.y && y <= g.y + g.h) {
-              return { speedMult: 0.75, label: "超能重力陣", inWater: false };
-            }
-          }
-          for (const r of chunk.roads) {
-            if (r.isMarble && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
-              return { speedMult: 1.10, label: "大理石大道 (+10%速)", inWater: false };
-            }
-          }
-        }
-
-        for (const g of chunk.grassTiles) {
-          if (x >= g.x && x <= g.x + g.w && y >= g.y && y <= g.y + g.h) {
-            return { speedMult: 0.80, label: "高草叢減速 (-20%)", inWater: false };
-          }
-        }
-
-        return { speedMult: 1.0, label: "", inWater: false };
+      // --- 封面背景動態演算 ---
+      updateTitleDemo(dt) {
+        this.titleDemo.camX += 38 * dt;
+        this.titleDemo.camY = Math.sin(this.titleDemo.camX * 0.003) * 45;
       },
 
-      resolveCollisions(ent, radius) {
-        const cx = Math.floor(ent.x / 600);
-        const cy = Math.floor(ent.y / 600);
-
-        for (let dx = -1; dx <= 1; dx++) {
-          for (let dy = -1; dy <= 1; dy++) {
-            const chunk = BiomeChunkBuilder.getBiomeChunk(this.selectedStage.id, cx + dx, cy + dy);
-
-            // 障礙物阻擋
-            for (const ob of chunk.obstacles) {
-              const nearX = Math.max(ob.x, Math.min(ent.x, ob.x + ob.w));
-              const nearY = Math.max(ob.y, Math.min(ent.y, ob.y + ob.h));
-              const distX = ent.x - nearX;
-              const distY = ent.y - nearY;
-              const distSq = distX * distX + distY * distY;
-              if (distSq < radius * radius) {
-                const d = Math.sqrt(distSq) || 0.001;
-                ent.x += (distX / d) * (radius - d);
-                ent.y += (distY / d) * (radius - d);
-              }
-            }
-
-            // 單向跳崖 (Ledge) 與怪物翻越相容
-            for (const ledge of chunk.ledges) {
-              if (ent.x >= ledge.x - 8 && ent.x <= ledge.x + ledge.w + 8) {
-                if (ent === this.player) {
-                  // 玩家向下跳躍
-                  if (ent.y >= ledge.y - 12 && ent.y <= ledge.y && ent.vy > 0) {
-                    ent.isJumpingLedge = true;
-                    ent.jumpTimer = 0.22;
-                  } else if (ent.y >= ledge.y && ent.y <= ledge.y + ledge.h + 8 && ent.vy < 0) {
-                    ent.y = ledge.y + ledge.h + 8; // 阻擋往上
-                  }
-                } else if (!ent.isBoss) {
-                  // 怪物翻崖機制：朝玩家方向允許翻越下崖
-                  if (ent.y >= ledge.y - 12 && ent.y <= ledge.y && this.player.y > ent.y) {
-                    ent.y += 24; // 怪物翻落
-                  } else if (ent.y >= ledge.y && ent.y <= ledge.y + ledge.h + 8 && this.player.y < ent.y) {
-                    ent.y = ledge.y + ledge.h + 8;
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-
-      /**
-       * ============================================================================
-       * 11. 8 分鐘快局戰鬥啟動與訓練家大招 (三態按鈕 + 環形倒數規)
-       * ============================================================================
-       */
-      startGameRun() {
-        SoundFX.init();
-        SoundFX.startBgm("battle");
-        document.getElementById("setupModal").classList.add("hidden");
-        document.getElementById("titleScreen").classList.add("hidden");
-        document.getElementById("hudLayer").classList.remove("hidden");
-
-        const basePoke = POKEMON_MAP.get(this.selectedStarterId) || POKEMON_MAP.get(25);
-        const tr = this.selectedTrainer || TRAINERS[0];
-        const upg = this.saveData.upgrades;
-
-        const isTrainerBond = (tr.bondPokemonIds || []).includes(basePoke.id);
-        const hasShiny = !!this.saveData.shinyUnlocked[basePoke.id] && !!this.useShinyStarter[basePoke.id];
-        const shinyMult = hasShiny ? 1.20 : 1.0;
-
-        const maxHp = Math.round(basePoke.hp * tr.mods.hpMult * (1 + upg.hp * 0.12) * shinyMult);
-        const maxSkillSlots = 3 + (upg.fourthSlot >= 1 ? 1 : 0);
-        const trainerSkillMaxCd = Math.round(tr.skillCd * (1 - (upg.trainerCd || 0) * 0.04));
-
-        this.player = {
-          id: basePoke.id,
-          data: basePoke,
-          x: 0, y: 0, vx: 0, vy: 0,
-          facingX: -1, facingY: 1, lastFacingX: -1,
-          walkBob: 0,
-          isJumpingLedge: false, jumpTimer: 0,
-          isShiny: hasShiny,
-          isTrainerBond,
-          bondColor: tr.bondColor || "#FFCB05",
-          bondName: tr.bondName || "專屬羈絆",
-          level: 1, exp: 0, nextExp: 16, // 降低首級經驗門檻
-          hp: maxHp, maxHp,
-          baseAtk: basePoke.atk * shinyMult,
-          baseSpeed: basePoke.speed,
-          dmgMult: tr.mods.dmgMult * (1 + upg.atk * 0.08) * (isTrainerBond ? 1.25 : 1.0),
-          cdMult: tr.mods.cdMult * Math.pow(0.965, upg.cd) * (isTrainerBond ? 0.80 : 1.0),
-          speedMult: tr.mods.speedMult,
-          areaMult: tr.mods.areaMult,
-          critRate: 0.10 + tr.mods.critBonus,
-          regen: tr.mods.regen + upg.hp * 0.5,
-          magnetRadius: 105,
-          projBonus: tr.mods.projBonus || 0,
-          maxSkillSlots,
-          skills: {},
-          heldItems: {},
-          invulnTimer: 0,
-          hitFlashTimer: 0,
-          buffTimer: 0,
-          shieldTimer: 0,
-          trainerSkillCd: 0,
-          trainerSkillMaxCd,
-          trainerSkillActiveTimer: 0,
-          trainerSkillMaxActive: tr.duration || 5.0,
-          status: null,
-          statusTimer: 0,
-          statusTick: 0
-        };
-
-        const initSkillId = SKILLS_CATALOG[basePoke.skill] ? basePoke.skill : "Tackle";
-        this.player.skills[initSkillId] = { id: initSkillId, level: 1, evolved: false, timer: 0.2 };
-
-        this.trainerCompanion = {
-          x: 26, y: 8,
-          facingX: -1, facingY: 1,
-          walkBob: 0,
-          sprite: tr.sprite,
-          sprites: tr.sprites || null,
-          name: tr.name,
-          pixelColors: tr.pixelColors
-        };
-
-        this.partners = [];
-        this.enemies = [];
-        this.projectiles = [];
-        this.particles = [];
-        this.lightningArcs = [];
-        this.floatingTexts = [];
-        this.gems = [];
-        this.mapItems = [];
-        this.meleeEffects = [];
-        this.ultimateVfxList = [];
-        this.telegraphs = [];
-        this.activeBoss = null;
-        this.weather = "clear";
-        this.cutinTimer = 0;
-
-        if (tr.mods.startPartner || (upg.partner >= 1)) {
-          this.summonOrUpgradePartner();
-        }
-
-        // 8 分鐘時間軸重置
-        this.runTime = 0;
-        this.spawnTimer = 0.4;
-        this.eliteSpawnTimer = 45;
-        this.treasureSpawnTimer = 35;
-        this.magnetSpawnTimer = 30;
-        this.birdBossSpawned = false;
-        this.mewtwoBossSpawned = false;
-        this.secretMewSpawned = false;
-        this.kills = 0;
-        this.runCoins = 0;
-        this.timeScale = 1;
-        document.getElementById("speedToggleText").textContent = "1x";
-        document.getElementById("bossHudContainer").classList.add("hidden");
-
-        this.state = "PLAYING";
-        this.refreshHUD();
-      },
-
-      triggerTrainerActiveSkill() {
-        if (this.state !== "PLAYING" || !this.player) return;
-        if (this.player.trainerSkillCd > 0 || this.player.trainerSkillActiveTimer > 0) return;
-
-        const tr = this.selectedTrainer;
-        const p = this.player;
-
-        // 啟動大招生效態
-        p.trainerSkillActiveTimer = p.trainerSkillMaxActive;
-        p.status = null;
-        p.statusTimer = 0;
-
-        // 觸發二次元瞬切 Cut-in 與定格
-        this.cutinTimer = 0.38;
-        this.cutinTrainer = tr;
-        SoundFX.play("ultimate");
-        this.camera.shakeTime = 0.35;
-        this.camera.shakeMagnitude = 10;
-
-        let healPct = 0.20;
-        if (tr.id === "ash") {
-          healPct = 0.20;
-          p.buffTimer = 6.0;
-          this.spawnFloatingText(p.x, p.y - 35, "小智熱血爆發! 攻速暴擊UP!", "#FFCB05", 15);
-        } else if (tr.id === "misty") {
-          healPct = 0.22;
-          this.meleeEffects.push({ style: "slam_wave", x: p.x, y: p.y, radius: 180, timer: 0.45, maxTime: 0.45, color: "#38BDF8" });
-          this.enemies.forEach(e => {
-            const d = Math.hypot(e.x - p.x, e.y - p.y);
-            if (d < 220) {
-              const ang = Math.atan2(e.y - p.y, e.x - p.x);
-              e.x += Math.cos(ang) * 95;
-              e.y += Math.sin(ang) * 95;
-              e.status = "Freeze"; e.statusTimer = 3.2;
-            }
-          });
-        } else if (tr.id === "brock") {
-          healPct = 0.25;
-          p.shieldTimer = 5.0;
-          this.spawnFloatingText(p.x, p.y - 35, "岩石減傷壁壘 5秒!", "#F59E0B", 15);
-        } else if (tr.id === "serena") {
-          healPct = 0.22;
-          this.partners.forEach(pt => { pt.cdTimer = 0; });
-          this.spawnFloatingText(p.x, p.y - 35, "雙打夥伴全連攜!", "#F472B6", 15);
-        } else if (tr.id === "lillie") {
-          healPct = 0.38;
-          p.invulnTimer = 2.5;
-          this.spawnFloatingText(p.x, p.y - 35, "傷藥噴霧 +38% HP ＆ 淨化異常!", "#34D399", 15);
-        } else if (tr.id === "red") {
-          healPct = 0.25;
-          p.buffTimer = 6.5;
-          this.enemies.forEach(e => {
-            const d = Math.hypot(e.x - p.x, e.y - p.y);
-            if (d < 250 && !e.isBoss) {
-              const ang = Math.atan2(e.y - p.y, e.x - p.x);
-              e.x += Math.cos(ang) * 120;
-              e.y += Math.sin(ang) * 120;
-            }
-          });
-          this.spawnFloatingText(p.x, p.y - 35, "赤紅王牌號令! 全傷+45%!", "#EF4444", 16);
-        }
-
-        const healAmt = Math.round(p.maxHp * healPct);
-        p.hp = Math.min(p.maxHp, p.hp + healAmt);
-        this.spawnFloatingText(p.x, p.y - 16, `+${healAmt} HP`, "#10B981", 14);
-        this.refreshHUD();
-      },
-
-      /**
-       * ============================================================================
-       * 12. 60FPS 戰鬥更新循環與 8 分鐘時間軸推進
-       * ============================================================================
-       */
-      updateCombat(dt) {
-        this.runTime += dt;
-        const p = this.player;
-
-        if (this.cutinTimer > 0) this.cutinTimer -= dt;
-        if (p.hitFlashTimer > 0) p.hitFlashTimer -= dt;
-
-        if (p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + p.regen * dt);
-        if (p.invulnTimer > 0) p.invulnTimer -= dt;
-        if (p.buffTimer > 0) p.buffTimer -= dt;
-        if (p.shieldTimer > 0) p.shieldTimer -= dt;
-
-        // 大招持續生效倒數 ➔ 轉冷卻倒數
-        if (p.trainerSkillActiveTimer > 0) {
-          p.trainerSkillActiveTimer -= dt;
-          if (p.trainerSkillActiveTimer <= 0) {
-            p.trainerSkillCd = p.trainerSkillMaxCd; // 生效結束才開始走 CD
-          }
-        } else if (p.trainerSkillCd > 0) {
-          p.trainerSkillCd = Math.max(0, p.trainerSkillCd - dt);
-        }
-
-        if (this.camera.shakeTime > 0) this.camera.shakeTime -= dt;
-
-        // 玩家狀態異常結算
-        if (p.statusTimer > 0) {
-          p.statusTimer -= dt;
-          p.statusTick -= dt;
-          if (p.statusTick <= 0) {
-            p.statusTick = 0.65;
-            if (p.status === "Burn" || p.status === "Poison") {
-              const dotDmg = Math.max(3, Math.round(p.maxHp * 0.015));
-              p.hp = Math.max(1, p.hp - dotDmg);
-              this.spawnFloatingText(p.x, p.y - 22, `-${dotDmg}`, p.status === 'Burn' ? "#F97316" : "#A855F7", 11);
-            }
-          }
-          if (p.statusTimer <= 0) p.status = null;
-        }
-
-        // 輸入向量處理
-        let ix = this.touchInput.active ? this.touchInput.dx : 0;
-        let iy = this.touchInput.active ? this.touchInput.dy : 0;
-        if (this.keys["w"] || this.keys["arrowup"]) iy -= 1;
-        if (this.keys["s"] || this.keys["arrowdown"]) iy += 1;
-        if (this.keys["a"] || this.keys["arrowleft"]) ix -= 1;
-        if (this.keys["d"] || this.keys["arrowright"]) ix += 1;
-
-        if (p.status === "Confusion") { ix = -ix; iy = -iy; }
-
-        const ilen = Math.hypot(ix, iy);
-        if (ilen > 0.05) {
-          ix /= ilen; iy /= ilen;
-          if (Math.abs(ix) > Math.abs(iy)) {
-            p.facingX = ix >= 0 ? 1 : -1;
-            p.facingY = 0;
-            p.lastFacingX = p.facingX;
-          } else {
-            p.facingY = iy < 0 ? -1 : 1;
-            p.facingX = 0;
-          }
-          p.walkBob += dt * 11;
-        } else {
-          p.walkBob = 0;
-        }
-
-        // 跳崖翻越滯空位移
-        if (p.isJumpingLedge) {
-          p.jumpTimer -= dt;
-          p.y += 180 * dt;
-          if (p.jumpTimer <= 0) p.isJumpingLedge = false;
-        } else {
-          // 地形減速判定
-          const terrain = this.getTerrainAt(p.x, p.y);
-          if (terrain.inWater && this.selectedStage.id === "cerulean_bay" && p.hp < p.maxHp) {
-            p.hp = Math.min(p.maxHp, p.hp + 1.5 * dt);
-          }
-
-          const statusSpdMod = p.status === "Freeze" ? 0.45 : (p.status === "Paralysis" ? 0.65 : 1.0);
-          const moveSpd = (88 + p.baseSpeed * 22) * p.speedMultiplier * terrain.speedMult * statusSpdMod * (p.buffTimer > 0 ? 1.25 : 1.0);
-          p.vx = ix * moveSpd;
-          p.vy = iy * moveSpd;
-          p.x += p.vx * dt;
-          p.y += p.vy * dt;
-          this.resolveCollisions(p, 18);
-        }
-
-        // 隨行訓練家跟隨
-        const sideOffset = (p.facingX !== 0 ? p.facingX : (p.lastFacingX || -1)) * 28;
-        const targetTx = p.x - sideOffset;
-        const targetTy = p.y + (p.facingY < 0 ? 12 : -8);
-        this.trainerCompanion.x += (targetTx - this.trainerCompanion.x) * Math.min(1, dt * 11.5);
-        this.trainerCompanion.y += (targetTy - this.trainerCompanion.y) * Math.min(1, dt * 11.5);
-        this.trainerCompanion.facingX = p.facingX;
-        this.trainerCompanion.facingY = p.facingY;
-        this.trainerCompanion.walkBob = p.walkBob;
-
-        // 雙打夥伴環繞
-        this.partnerOrbitBase += dt * 2.1;
-        this.partners.forEach((pt, idx) => {
-          const angle = this.partnerOrbitBase + idx * Math.PI;
-          pt.x += (p.x + Math.cos(angle) * 58 - pt.x) * Math.min(1, dt * 10);
-          pt.y += (p.y + Math.sin(angle) * 46 - pt.y) * Math.min(1, dt * 10);
-          pt.facingX = p.facingX;
-          pt.facingY = p.facingY;
-
-          pt.cdTimer -= dt;
-          if (pt.cdTimer <= 0) {
-            const target = this.findNearestEnemyInViewport(pt.x, pt.y, 340);
-            if (target) {
-              const skId = SKILLS_CATALOG[pt.data.skill] ? pt.data.skill : "Tackle";
-              this.fireSingleSkill(pt, skId, Math.min(10, pt.level), false, 0.75);
-              pt.cdTimer = 1.45;
-            }
-          }
-        });
-
-        this.camera.x = p.x;
-        this.camera.y = p.y;
-
-        // 招式冷卻結算
-        const cdFactor = Math.max(0.55, p.cdMult * (p.buffTimer > 0 ? 0.72 : 1.0));
-        Object.values(p.skills).forEach(skSlot => {
-          skSlot.timer -= dt;
-          if (skSlot.timer <= 0) {
-            const meta = SKILLS_CATALOG[skSlot.id];
-            if (!meta) return;
-            if (skSlot.evolved) {
-              this.triggerUltimateSuperMove(meta, skSlot);
-              skSlot.timer = Math.max(2.2, meta.baseCd * 1.85 * cdFactor);
-            } else {
-              this.fireSingleSkill(p, skSlot.id, skSlot.level, false, 1.0);
-              const lvCdBonus = skSlot.level >= 9 ? 0.80 : (skSlot.level >= 4 ? 0.90 : 1.0);
-              skSlot.timer = Math.max(0.32, meta.baseCd * lvCdBonus * cdFactor);
-            }
-          }
-        });
-
-        this.updateSpawners(dt);
-        this.updateWeatherAndAmbiance(dt);
-        this.updateTelegraphs(dt);
-        this.updateProjectiles(dt);
-        this.updateMeleeEffects(dt);
-        this.updateUltimateVfx(dt);
-        this.updateEnemies(dt);
-        this.updateLootAndGems(dt);
-        this.updateParticlesAndTexts(dt);
-        this.refreshHUD();
-      },
-
-      /**
-       * ============================================================================
-       * 13. 8 分鐘怪群刷新器 (5:00 三聖鳥, 7:30 超夢)
-       * ============================================================================
-       */
-      updateSpawners(dt) {
-        const diff = this.selectedDifficulty;
-        const minutes = this.runTime / 60;
-
-        // 5 分鐘 (300秒) 召喚三聖鳥
-        if (!this.birdBossSpawned && this.runTime >= 300) {
-          this.birdBossSpawned = true;
-          const birdIds = [144, 145, 146];
-          this.spawnBoss(birdIds[Math.floor(Math.random() * birdIds.length)], false);
-        }
-
-        // 7 分 30 秒 (450秒) 召喚王者超夢
-        if (!this.mewtwoBossSpawned && this.runTime >= 450) {
-          this.mewtwoBossSpawned = true;
-          this.spawnBoss(150, true);
-        }
-
-        // 寶藏怪與磁鐵計時器
-        this.treasureSpawnTimer -= dt;
-        if (this.treasureSpawnTimer <= 0) {
-          this.treasureSpawnTimer = 36; // 36s 頻繁寶藏怪
-          const isMeowth = Math.random() < 0.58;
-          this.spawnTreasureMonster(isMeowth ? "meowth" : "chansey");
-        }
-
-        this.magnetSpawnTimer -= dt;
-        if (this.magnetSpawnTimer <= 0) {
-          this.magnetSpawnTimer = 32;
-          const ang = Math.random() * Math.PI * 2;
-          this.spawnMapLoot("magnet", this.player.x + Math.cos(ang) * 280, this.player.y + Math.sin(ang) * 280);
-        }
-
-        this.eliteSpawnTimer -= dt;
-        if (this.eliteSpawnTimer <= 0) {
-          this.eliteSpawnTimer = 45;
-          this.spawnWildEnemy(true);
-        }
-
-        this.spawnTimer -= dt;
-        if (this.spawnTimer <= 0) {
-          const baseInterval = Math.max(0.24, (1.10 - minutes * 0.12) / diff.spawnRateMult);
-          this.spawnTimer = baseInterval;
-          if (this.enemies.length < 75) {
-            this.spawnWildEnemy(false);
-          }
-        }
-      },
-
-      spawnWildEnemy(isElite = false) {
-        const minutes = this.runTime / 60;
-        const diff = this.selectedDifficulty;
-
-        let candidates = REGULAR_MOB_POOL;
-        if (minutes < 1.5) candidates = REGULAR_MOB_POOL.filter(p => p.hp <= 140);
-        else if (minutes < 4.5) candidates = REGULAR_MOB_POOL.filter(p => p.hp <= 260);
-        const pick = candidates[Math.floor(Math.random() * candidates.length)] || REGULAR_MOB_POOL[0];
-
-        const ang = Math.random() * Math.PI * 2;
-        const dist = Math.max(this.width, this.height) * 0.56 + 40;
-        const ex = this.player.x + Math.cos(ang) * dist;
-        const ey = this.player.y + Math.sin(ang) * dist;
-
-        // 8分鐘收斂血量成長公式
-        const timeHpScale = 1 + (minutes * 0.72) + Math.pow(minutes / 2.6, 2.0) * 0.85;
-        const hp = Math.round((35 + pick.hp * 0.55) * timeHpScale * diff.hpMult * (isElite ? 3.8 : 1.0));
-        const atk = Math.round((8 + pick.atk * 0.35) * (1 + minutes * 0.18) * diff.atkMult * (isElite ? 1.45 : 1.0));
-
-        this.saveData.pokedexSeen[pick.id] = true;
-
-        this.enemies.push({
-          id: pick.id,
-          data: pick,
-          x: ex, y: ey,
-          hp, maxHp: hp, atk,
-          speed: (38 + pick.speed * 11) * diff.spdMult * (isElite ? 1.08 : 1.0),
-          radius: isElite ? 30 : 20,
-          isElite, isBoss: false,
-          isShiny: Math.random() < 0.003 * diff.shinyBonus,
-          hitFlashTimer: 0,
-          facingX: -1, facingY: 1,
-          status: null, statusTimer: 0, statusTick: 0,
-          ccImmunityTimer: 0,
-          rangedCd: 2.2 + Math.random() * 2.0
-        });
-      },
-
-      spawnBoss(bossId, isFinalMewtwo = false) {
-        const bData = POKEMON_MAP.get(bossId);
-        const diff = this.selectedDifficulty;
-        const ang = Math.random() * Math.PI * 2;
-        const bx = this.player.x + Math.cos(ang) * 280;
-        const by = this.player.y + Math.sin(ang) * 280;
-        const hp = Math.round((isFinalMewtwo ? 14000 : 7500) * diff.hpMult);
-
-        const weatherMap = {
-          144: "blizzard",
-          145: "thunder",
-          146: "heatwave",
-          150: "aura",
-          151: "aura"
-        };
-        this.weather = weatherMap[bossId] || "thunder";
-
-        SoundFX.startBgm("boss");
-        this.camera.shakeTime = 0.65;
-        this.camera.shakeMagnitude = 14;
-
-        this.saveData.pokedexSeen[bossId] = true;
-        const boss = {
-          id: bossId,
-          data: bData,
-          x: bx, y: by,
-          hp, maxHp: hp,
-          atk: Math.round((isFinalMewtwo ? 42 : 30) * diff.atkMult),
-          speed: (isFinalMewtwo ? 92 : 82) * diff.spdMult,
-          radius: 46,
-          isElite: true, isBoss: true,
-          hitFlashTimer: 0,
-          facingX: -1, facingY: 1,
-          status: null, statusTimer: 0, statusTick: 0,
-          ccImmunityTimer: 0,
-          rangedCd: 2.2
-        };
-        this.enemies.push(boss);
-        this.activeBoss = boss;
-        SoundFX.play("boss");
-        document.getElementById("bossHudContainer").classList.remove("hidden");
-      },
-
-      /**
-       * ============================================================================
-       * 14. 技能發射、三層高光能量流與究極超武
-       * ============================================================================
-       */
-      fireSingleSkill(caster, skillId, level, isEvolved, dmgScale = 1.0) {
-        const meta = SKILLS_CATALOG[skillId] || SKILLS_CATALOG["Tackle"];
-        const target = this.findNearestEnemyInViewport(caster.x, caster.y, 380);
-        const baseAngle = target
-          ? Math.atan2(target.y - caster.y, target.x - caster.x)
-          : (caster.facingX >= 0 ? 0 : Math.PI);
-
-        const countBonus = (level >= 3 ? 1 : 0) + (level >= 6 ? 1 : 0) + (level >= 9 ? 1 : 0) + (caster === this.player ? this.player.projBonus : 0);
-        const count = Math.min(6, 1 + countBonus);
-        const isStab = (caster.data.type1 === meta.type || caster.data.type2 === meta.type);
-        const stabMult = isStab ? 1.35 : 1.0;
-
-        // 天候增傷連動
-        let weatherMult = 1.0;
-        if (this.weather === "rain" && meta.type === "Water") weatherMult = 1.25;
-        if (this.weather === "heatwave" && meta.type === "Fire") weatherMult = 1.25;
-        if (this.weather === "blizzard" && meta.type === "Ice") weatherMult = 1.20;
-        if (this.weather === "aura" && (meta.type === "Psychic" || meta.type === "Ghost")) weatherMult = 1.20;
-
-        const rawDmg = (meta.baseDmg + this.player.baseAtk * 0.85) 
-          * (1 + (level - 1) * 0.22) * this.player.dmgMult * stabMult * dmgScale * weatherMult;
-
-        if (meta.isMelee) {
-          this.executeMeleeSkill(caster, meta, level, count, baseAngle, rawDmg);
-          return;
-        }
-
-        // 十萬伏特
-        if (skillId === "Thunderbolt") {
-          const maxRange = 220 * this.player.areaMult;
-          const nearby = this.enemies
-            .filter(e => Math.hypot(e.x - caster.x, e.y - caster.y) <= maxRange)
-            .sort((a, b) => Math.hypot(a.x - caster.x, a.y - caster.y) - Math.hypot(b.x - caster.x, b.y - caster.y));
-
-          const bolts = Math.max(3, count + 2);
-          for (let b = 0; b < bolts; b++) {
-            const enemy = nearby[b];
-            let endX, endY;
-            if (enemy) {
-              endX = enemy.x; endY = enemy.y;
-              this.dealDamageToEnemy(enemy, rawDmg, meta.type, 0.45, 28);
-            } else {
-              const spread = baseAngle + (b - (bolts - 1) / 2) * 0.36;
-              endX = caster.x + Math.cos(spread) * 160;
-              endY = caster.y + Math.sin(spread) * 160;
-            }
-            this.createLightningArc(caster.x, caster.y, endX, endY, "#FACC15");
-          }
-          SoundFX.play("hit");
-          return;
-        }
-
-        for (let i = 0; i < count; i++) {
-          const spread = count > 1 ? (i - (count - 1) / 2) * 0.16 : 0;
-          const ang = baseAngle + spread;
-          const spd = skillId === "Hydro Pump" ? 420 : 360;
-
-          this.projectiles.push({
-            x: caster.x, y: caster.y,
-            vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
-            angle: ang, radius: 18 * this.player.areaMult,
-            dmg: rawDmg, type: meta.type, skillId,
-            vfx: meta.vfx || "star_shot",
-            color: meta.color, pierce: 3, life: 1.40,
-            hitSet: new Set()
-          });
-        }
-        SoundFX.play("hit");
-      },
-
-      executeMeleeSkill(caster, meta, level, count, baseAngle, rawDmg) {
-        const areaScale = this.player.areaMult * (level >= 3 ? 1.15 : 1.0);
-        const maxReach = 96 * areaScale;
-
-        this.meleeEffects.push({
-          style: meta.meleeStyle,
-          ox: caster.x, oy: caster.y,
-          angle: baseAngle, radius: maxReach,
-          timer: 0.32, maxTime: 0.32, color: meta.color
-        });
-
-        // 命中判定與吸血霸體補償
-        this.enemies.forEach(e => {
-          const d = Math.hypot(e.x - caster.x, e.y - caster.y);
-          if (d <= maxReach + e.radius) {
-            this.dealDamageToEnemy(e, rawDmg, meta.type, 0.35, 52);
-            if (caster === this.player && this.player.hp < this.player.maxHp) {
-              this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.round(this.player.maxHp * 0.008));
-            }
-          }
-        });
-        SoundFX.play("hit");
-      },
-
-      triggerUltimateSuperMove(meta, skSlot) {
-        const p = this.player;
-        this.camera.shakeTime = 0.32;
-        this.camera.shakeMagnitude = 9;
-        SoundFX.play("ultimate");
-
-        const ultDmg = (meta.baseDmg * 3.8 + p.baseAtk * 2.5) * p.dmgMult;
-        this.ultimateVfxList.push({
-          type: meta.type, x: p.x, y: p.y, timer: 1.15, maxTime: 1.15, color: meta.color
-        });
-
-        // 全屏清場打擊
-        this.enemies.forEach(e => {
-          if (Math.hypot(e.x - p.x, e.y - p.y) < 480) {
-            this.dealDamageToEnemy(e, ultDmg, meta.type, 0.65, 80);
-          }
-        });
-      },
-
-      dealDamageToEnemy(enemy, rawDmg, moveType, bonusStatusChance = 0, knockback = 24) {
-        const eff = calcTypeMultiplier(moveType, enemy.data.type1, enemy.data.type2);
-        const isCrit = Math.random() < this.player.critRate;
-        const finalDmg = Math.round(rawDmg * eff * (isCrit ? 1.65 : 1.0));
-
-        enemy.hp -= finalDmg;
-        enemy.hitFlashTimer = 0.08; // 受擊瞬態白閃
-
-        // 擊退
-        const ang = Math.atan2(enemy.y - this.player.y, enemy.x - this.player.x);
-        enemy.x += Math.cos(ang) * (enemy.isBoss ? knockback * 0.12 : knockback);
-        enemy.y += Math.sin(ang) * (enemy.isBoss ? knockback * 0.12 : knockback);
-
-        this.spawnFloatingText(enemy.x, enemy.y - 12, `${finalDmg}`, eff > 1.1 ? "#F97316" : (isCrit ? "#FACC15" : "#FFFFFF"), isCrit ? 15 : 12);
-
-        if (enemy.hp <= 0) {
-          const idx = this.enemies.indexOf(enemy);
-          if (idx !== -1) this.handleEnemyDeath(enemy, idx);
-        }
-      },
-
-      handleEnemyDeath(e, idx) {
-        this.enemies.splice(idx, 1);
-        this.kills += 1;
-        this.saveData.stats.totalKills += 1;
-        this.saveData.pokedexCaught[e.id] = true;
-
-        if (e.isShiny) this.saveData.shinyUnlocked[e.id] = true;
-
-        // 掉落高面額經驗水晶 (基礎 14)
-        this.gems.push({ x: e.x, y: e.y, val: e.isElite ? 45 : 14, color: e.isElite ? "#F59E0B" : "#38BDF8" });
-        const coins = Math.max(1, Math.round((e.isElite ? 25 : 3) * this.selectedDifficulty.coinMult));
-        this.runCoins += coins;
-        this.saveData.coins += coins;
-
-        if (e.isBoss) {
-          this.activeBoss = null;
-          this.weather = "clear";
-          document.getElementById("bossHudContainer").classList.add("hidden");
-          this.spawnMapLoot("evo_chest", e.x, e.y);
-
-          if (e.id === 150) {
-            this.saveData.stats.mewtwoDefeated += 1;
-            this.saveData.unlockedTrainers["red"] = true;
-            this.saveToStorage();
-            if (!this.secretMewSpawned) {
-              this.secretMewSpawned = true;
-              this.spawnBoss(151, false);
-            }
-          } else if (e.id === 151) {
-            this.triggerGameOver(true);
-          }
-        }
-      },
-
-      gainExp(amount) {
-        const p = this.player;
-        p.exp += amount;
-        if (p.exp >= p.nextExp) {
-          p.exp -= p.nextExp;
-          p.level += 1;
-          p.nextExp = Math.round(p.nextExp * 1.20 + 10);
-          SoundFX.play("levelup");
-
-          // 8分鐘快局：Lv.16 即可進化
-          if (p.data.evo_level !== "None" && p.level >= 16) {
-            if (p.id === 133) {
-              this.state = "PAUSED";
-              document.getElementById("eevee-evo-modal").classList.remove("hidden");
-              return;
-            } else if (p.data.evo_to) {
-              this.evolvePlayerPokemon(p.data.evo_to);
-            }
-          }
-          this.openLevelUpModal();
-        }
-      },
-
-      evolvePlayerPokemon(targetId) {
-        const p = this.player;
-        const nextData = POKEMON_MAP.get(targetId);
-        if (!nextData) return;
-        p.id = nextData.id;
-        p.data = nextData;
-        p.maxHp = Math.round(p.maxHp * 1.35);
-        p.hp = p.maxHp;
-        this.saveData.stats.evolutions += 1;
-        this.saveData.pokedexCaught[nextData.id] = true;
-        SoundFX.play("levelup");
-        this.showCutsceneBanner(`[進化之光] 進化成了【${nextData.name_zh}】！`, "生命全滿，基礎能力大幅躍升！", 2800);
-      },
-
-      /**
-       * ============================================================================
-       * 15. 升級三選一卡片 (手機端橫向緊湊條列式生成)
-       * ============================================================================
-       */
-      openLevelUpModal() {
-        this.state = "PAUSED";
-        const p = this.player;
-        const choices = [];
-
-        // 優先抽取超武突破
-        Object.values(p.skills).forEach(sk => {
-          const meta = SKILLS_CATALOG[sk.id];
-          if (sk.level >= 10 && !sk.evolved && meta && (!meta.reqItem || p.heldItems[meta.reqItem])) {
-            choices.push({
-              title: meta.evolvedName, badge: "究極超武",
-              sprite: meta.sprite, desc: meta.evoDesc,
-              rarityClass: "rarity-legendary",
-              apply: () => { sk.evolved = true; }
-            });
-          }
-        });
-
-        // 抽取招式升級
-        Object.values(p.skills).forEach(sk => {
-          if (sk.level < 10 && choices.length < 3) {
-            const meta = SKILLS_CATALOG[sk.id];
-            choices.push({
-              title: `${meta.name} Lv.${sk.level + 1}`, badge: "招式升級",
-              sprite: meta.sprite, desc: getSkillNextLevelBonusDesc(sk.level + 1),
-              rarityClass: "rarity-common",
-              apply: () => { sk.level += 1; }
-            });
-          }
-        });
-
-        // 補滿能力藥劑
-        while (choices.length < 3) {
-          choices.push({
-            title: "蛋白藥劑", badge: "全傷提升",
-            sprite: ITEM_SPRITES.protein, desc: "全招式傷害永久提升 +8%！",
-            rarityClass: "rarity-common",
-            apply: () => { p.dmgMult *= 1.08; }
-          });
-        }
-
-        this._currentUpgradeChoices = choices;
-        const container = document.getElementById("upgradeChoicesContainer");
-        container.innerHTML = choices.map((c, idx) => `
-          <div onclick="GameApp.selectUpgradeChoice(${idx})" class="poke-card ${c.rarityClass} p-3 flex items-center justify-between gap-3 cursor-pointer hover:border-blue-500">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <img src="${c.sprite}" class="w-10 h-10 pixel-sprite object-contain shrink-0" alt="icon" />
-              <div class="min-w-0">
-                <div class="flex items-center gap-1.5">
-                  <span class="font-black text-xs sm:text-sm text-slate-800 truncate">${c.title}</span>
-                  <span class="px-1.5 py-0.2 bg-blue-600 text-white text-[9px] font-black rounded-full shrink-0">${c.badge}</span>
-                </div>
-                <p class="text-[11px] font-bold text-slate-600 truncate mt-0.5">${c.desc}</p>
-              </div>
-            </div>
-            <button class="poke-btn-red px-3 py-1 text-xs font-black shrink-0">選擇</button>
-          </div>
-        `).join("");
-
-        document.getElementById("levelUpModal").classList.remove("hidden");
-      },
-
-      selectUpgradeChoice(idx) {
-        if (this._currentUpgradeChoices && this._currentUpgradeChoices[idx]) {
-          this._currentUpgradeChoices[idx].apply();
-        }
-        document.getElementById("levelUpModal").classList.add("hidden");
-        this.state = "PLAYING";
-        this.refreshHUD();
-      },
-
-      /**
-       * ============================================================================
-       * 16. CANVAS 戰鬥渲染引擎 (圖層分離、環形倒數規、二次元 Cut-in)
-       * ============================================================================
-       */
-      renderCombat() {
+      renderTitleDemo() {
         const ctx = this.ctx;
         ctx.clearRect(0, 0, this.width, this.height);
-        if (!this.player) return;
-
-        let shakeX = 0, shakeY = 0;
-        if (this.camera.shakeTime > 0) {
-          shakeX = (Math.random() - 0.5) * this.camera.shakeMagnitude * 2;
-          shakeY = (Math.random() - 0.5) * this.camera.shakeMagnitude * 2;
-        }
-        const camX = this.camera.x + shakeX;
-        const camY = this.camera.y + shakeY;
+        const camX = this.titleDemo.camX;
+        const camY = this.titleDemo.camY;
         const toSx = (wx) => wx - camX + this.width / 2;
         const toSy = (wy) => wy - camY + this.height / 2;
 
-        // --- LAYER 1: 離線紋理預渲染地表 ---
+        // 離線快取繪製地表
         const tileSize = 60;
         const startTx = Math.floor((camX - this.width / 2) / tileSize) - 1;
         const endTx = Math.floor((camX + this.width / 2) / tileSize) + 1;
@@ -2745,316 +1977,557 @@
             const isDark = ((tx + ty) & 1) === 0;
             const sx = tx * tileSize - camX + this.width / 2;
             const sy = ty * tileSize - camY + this.height / 2;
-            const tileImg = TileTextureCache.getTile(this.selectedStage.id, isDark);
+            const tileImg = TileTextureCache.getTile("pallet", isDark);
             ctx.drawImage(tileImg, sx, sy);
           }
         }
 
-        // --- LAYER 2: 水窪、木棧道、單向跳崖與 3D 魔法陣 ---
-        const startCx = Math.floor((camX - this.width / 2) / 600) - 1;
-        const endCx = Math.floor((camX + this.width / 2) / 600) + 1;
-        const startCy = Math.floor((camY - this.height / 2) / 600) - 1;
-        const endCy = Math.floor((camY + this.height / 2) / 600) + 1;
-        const now = performance.now() * 0.0015;
+        // 野生小怪漫步與跳躍
+        const now = performance.now() * 0.004;
+        this.titleDemo.wildWanderers.forEach((w, idx) => {
+          const worldX = Math.floor((camX + w.offsetX) / 1200) * 1200 + ((w.offsetX + idx * 170) % 1200);
+          const worldY = camY + w.offsetY + Math.sin(now + w.phase) * 14;
+          const sx = toSx(worldX);
+          const sy = toSy(worldY);
+          const hop = Math.abs(Math.sin(now * 1.6 + w.phase)) * 8;
 
-        for (let cx = startCx; cx <= endCx; cx++) {
-          for (let cy = startCy; cy <= endCy; cy++) {
-            const chunk = BiomeChunkBuilder.getBiomeChunk(this.selectedStage.id, cx, cy);
-
-            // 木棧道
-            chunk.piers.forEach(r => {
-              const rx = toSx(r.x); const ry = toSy(r.y);
-              ctx.fillStyle = this.selectedStage.roadColor;
-              ctx.fillRect(rx, ry, r.w, r.h);
-              ctx.strokeStyle = this.selectedStage.roadBorder;
-              ctx.lineWidth = 2;
-              ctx.strokeRect(rx, ry, r.w, r.h);
-            });
-
-            // 單向跳崖 (Ledge)
-            chunk.ledges.forEach(l => {
-              const lx = toSx(l.x); const ly = toSy(l.y);
-              ctx.fillStyle = "#B45309";
-              ctx.fillRect(lx, ly, l.w, l.h * 0.45);
-              ctx.fillStyle = "#78350F";
-              ctx.fillRect(lx, ly + l.h * 0.45, l.w, l.h * 0.55);
-            });
-
-            // 3D 旋轉五芒星霓虹魔法陣
-            chunk.grassTiles.forEach(g => {
-              if (g.isPsychicWell) {
-                const cx = toSx(g.x + g.w / 2);
-                const cy = toSy(g.y + g.h / 2);
-                ctx.save();
-                ctx.translate(cx, cy);
-                ctx.strokeStyle = "rgba(244, 114, 182, 0.85)";
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.ellipse(0, 0, 75, 40, 0, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.restore();
-              }
-            });
-          }
-        }
-
-        // --- LAYER 3: 經驗水晶與戰利品 ---
-        this.gems.forEach(g => {
-          const sx = toSx(g.x); const sy = toSy(g.y);
-          ctx.fillStyle = g.color;
-          ctx.beginPath();
-          ctx.arc(sx, sy, 4, 0, Math.PI * 2);
-          ctx.fill();
-        });
-
-        // --- LAYER 4: 隨行夥伴與玩家精靈 (受擊白閃 + 環形倒數規) ---
-        const p = this.player;
-        const px = toSx(p.x);
-        const py = toSy(p.y);
-
-        // 腳底增益/護盾環形倒數規 (Radial Ring)
-        if (p.buffTimer > 0 || p.shieldTimer > 0) {
-          const timer = p.buffTimer > 0 ? p.buffTimer : p.shieldTimer;
-          const maxT = p.buffTimer > 0 ? 6.0 : 5.0;
-          const pct = Math.max(0, timer / maxT);
-          const isEnding = timer < 1.5;
-          const blinkAlpha = isEnding ? (Math.sin(performance.now() * 0.02) > 0 ? 1 : 0.3) : 1;
-
-          ctx.save();
-          ctx.strokeStyle = `rgba(245, 158, 11, ${blinkAlpha})`;
-          ctx.lineWidth = 3.5;
-          ctx.beginPath();
-          ctx.arc(px, py, 32, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct, false);
-          ctx.stroke();
-          ctx.restore();
-        }
-
-        // 繪製玩家精靈
-        const sprUrl = p.facingY < 0 ? p.data.back_sprite : p.data.forward_sprite;
-        const pRec = SpriteCache.get(sprUrl);
-        if (pRec && pRec.loaded) {
-          ctx.save();
-          ctx.translate(px, py);
-          if (p.facingX > 0) ctx.scale(-1, 1);
-          if (p.hitFlashTimer > 0) ctx.filter = "brightness(3)"; // 受擊白閃
-          ctx.drawImage(pRec.img, -26, -26, 52, 52);
-          ctx.restore();
-        }
-
-        // --- LAYER 5: 怪物渲染 (受擊白閃) ---
-        this.enemies.forEach(e => {
-          const esx = toSx(e.x); const esy = toSy(e.y);
-          const eRec = SpriteCache.get(e.data.forward_sprite);
-          if (eRec && eRec.loaded) {
+          const pData = POKEMON_MAP.get(w.id);
+          if (!pData) return;
+          const rec = SpriteCache.get(pData.forward_sprite);
+          if (rec && rec.loaded) {
             ctx.save();
-            ctx.translate(esx, esy);
-            if (e.facingX > 0) ctx.scale(-1, 1);
-            if (e.hitFlashTimer > 0) ctx.filter = "brightness(3)";
-            const sz = e.isBoss ? 96 : 48;
-            ctx.drawImage(eRec.img, -sz / 2, -sz / 2, sz, sz);
+            ctx.translate(sx, sy - hop);
+            ctx.fillStyle = "rgba(15,23,42,0.25)";
+            ctx.beginPath();
+            ctx.ellipse(0, 18 + hop * 0.4, 15, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            if (Math.cos(now * 0.5 + w.phase) > 0) ctx.scale(-1, 1);
+            ctx.drawImage(rec.img, -24, -24, 48, 48);
             ctx.restore();
           }
         });
+      },
 
-        // --- LAYER 6: 投射物、白熱能量核心 (lighter 合成) ---
-        ctx.save();
-        ctx.globalCompositeOperation = "lighter";
-        this.projectiles.forEach(pr => {
-          const sx = toSx(pr.x); const sy = toSy(pr.y);
-          ctx.fillStyle = pr.color;
-          ctx.beginPath();
-          ctx.arc(sx, sy, pr.radius, 0, Math.PI * 2);
-          ctx.fill();
-          // 純白高能量核心
-          ctx.fillStyle = "#FFFFFF";
-          ctx.beginPath();
-          ctx.arc(sx, sy, pr.radius * 0.45, 0, Math.PI * 2);
-          ctx.fill();
-        });
-        ctx.restore();
+      // --- UI 流程與彈窗控制 ---
+      openSetupFlow() {
+        SoundFX.init();
+        document.getElementById("titleScreen").classList.add("hidden");
+        document.getElementById("setupModal").classList.remove("hidden");
+        this.setWizardStep(1);
+      },
 
-        // --- LAYER 7: 飄浮傷害數字 ---
-        this.floatingTexts.forEach(ft => {
-          ctx.save();
-          ctx.font = `900 ${ft.size}px sans-serif`;
-          ctx.fillStyle = ft.color;
-          ctx.fillText(ft.text, toSx(ft.x), toSy(ft.y));
-          ctx.restore();
+      backToTitle() {
+        document.getElementById("setupModal").classList.add("hidden");
+        document.getElementById("titleScreen").classList.remove("hidden");
+        this.updateTitleUI();
+      },
+
+      setWizardStep(step) {
+        this.wizardStep = step;
+        [1, 2, 3].forEach(s => {
+          document.getElementById(`wizardStep${s}`).classList.toggle("hidden", s !== step);
+          const tab = document.getElementById(`stepTab${s}`);
+          if (s === step) tab.className = "py-2.5 border-b-4 border-red-600 text-red-600 bg-white";
+          else tab.className = "py-2.5 border-b-4 border-transparent text-slate-500";
         });
 
-        // --- LAYER 8: 二次元大招特寫插播 (Cut-in Banner) ---
-        if (this.cutinTimer > 0 && this.cutinTrainer) {
-          ctx.save();
-          const tr = this.cutinTrainer;
-          ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
-          ctx.fillRect(0, this.height * 0.38, this.width, 96);
-          ctx.strokeStyle = tr.bondColor || "#FFCB05";
-          ctx.lineWidth = 3;
-          ctx.strokeRect(0, this.height * 0.38, this.width, 96);
+        const titles = {
+          1: ["STEP 1/3：選擇隨行訓練家", "6 位訓練家皆有專屬代表精靈羈絆（傷害+25%、攻速+20%）！"],
+          2: ["STEP 2/3：選擇出戰寶可夢", "標示「專屬羈絆」享有共鳴加成！伊布支援三系分支進化！"],
+          3: ["STEP 3/3：選擇難度與 GBA 生態舞台", "8 分鐘快局 ‧ 雙向地形減速與天候屬性連動！"]
+        };
+        document.getElementById("wizardStepTitle").textContent = titles[step][0];
+        document.getElementById("wizardStepDesc").textContent = titles[step][1];
+        document.getElementById("btnWizardPrev").textContent = step === 1 ? "← 返回大廳" : "← 上一步";
+        document.getElementById("btnWizardNext").textContent = step === 3 ? "立即出發冒險 →" : "下一步 →";
 
-          ctx.font = "900 24px 'Noto Sans TC', sans-serif";
-          ctx.fillStyle = tr.bondColor || "#FFCB05";
-          ctx.fillText(`【${tr.skillName}】`, this.width * 0.28, this.height * 0.38 + 55);
-          ctx.restore();
+        this.renderWizardContent();
+      },
+
+      prevWizardStep() {
+        if (this.wizardStep <= 1) this.backToTitle();
+        else this.setWizardStep(this.wizardStep - 1);
+      },
+
+      nextWizardStep() {
+        if (this.wizardStep < 3) this.setWizardStep(this.wizardStep + 1);
+        else this.startGameRun();
+      },
+
+      renderWizardContent() {
+        // 渲染訓練家
+        const tContainer = document.getElementById("wizardStep1");
+        tContainer.innerHTML = TRAINERS.map(t => {
+          const unlocked = !!this.saveData.unlockedTrainers[t.id];
+          const selected = this.selectedTrainer.id === t.id;
+          return `
+            <div onclick="GameApp.handleTrainerCardClick('${t.id}')" class="poke-card cursor-pointer p-3.5 flex flex-col justify-between ${selected ? 'selected' : ''} ${!unlocked ? 'opacity-80 bg-slate-100' : ''}">
+              <div>
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="w-12 h-12 rounded-xl bg-amber-50 border-2 border-slate-800 flex items-center justify-center shrink-0">
+                    <img src="${t.sprite}" class="w-10 h-10 pixel-sprite object-contain ${!unlocked && t.isHiddenRed ? 'brightness-0' : ''}" alt="${t.name}" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center justify-between gap-1">
+                      <span class="font-black text-sm text-slate-800 truncate">${!unlocked && t.isHiddenRed ? '??? 隱藏冠軍' : t.name}</span>
+                      ${selected ? `<span class="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-black rounded-full">出戰中</span>` : ''}
+                    </div>
+                    <div class="text-[10px] font-black text-amber-800 bg-amber-100 inline-block px-1.5 py-0.2 rounded-full mt-0.5">大招：${t.skillName} (CD ${t.skillCd}s)</div>
+                  </div>
+                </div>
+                <p class="text-xs font-bold text-slate-600 leading-relaxed">${t.desc}</p>
+              </div>
+              <div class="mt-2.5 pt-1.5 border-t border-slate-200 flex items-center justify-between">
+                ${unlocked ? `<span class="text-xs font-black text-emerald-600">已解鎖</span>` : `<span class="text-xs font-black text-amber-600">${t.cost} 代幣</span>`}
+                <button class="${selected ? 'poke-btn-blue' : 'poke-btn-red'} px-3 py-1 text-xs font-black">${unlocked ? (selected ? '已選擇' : '選擇') : '解鎖'}</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        // 渲染精靈 (羈絆共鳴自動置頂)
+        const pContainer = document.getElementById("wizardStep2");
+        const curBondSet = new Set(this.selectedTrainer.bondPokemonIds || []);
+        const sortedRoster = [...PLAYABLE_ROSTER].sort((a, b) => {
+          const aBond = curBondSet.has(a.id) ? 1 : 0;
+          const bBond = curBondSet.has(b.id) ? 1 : 0;
+          return bBond - aBond;
+        });
+
+        pContainer.innerHTML = sortedRoster.map(item => {
+          const p = POKEMON_MAP.get(item.id);
+          const unlocked = !!this.saveData.unlockedPokemon[p.id];
+          const selected = this.selectedStarterId === p.id;
+          const isTrainerBond = curBondSet.has(p.id);
+
+          return `
+            <div onclick="GameApp.handlePokemonCardClick(${p.id}, ${item.cost})" class="poke-card cursor-pointer p-2.5 flex flex-col justify-between ${selected ? 'selected' : ''} ${isTrainerBond ? 'border-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.3)]' : ''}">
+              <div>
+                <div class="flex items-center justify-between text-[10px]">
+                  <span class="font-pixel text-slate-500">#${String(p.id).padStart(3,'0')}</span>
+                  ${isTrainerBond ? `<span class="px-1.5 py-0.2 bg-amber-400 text-slate-900 font-black text-[9px] rounded-full">羈絆+25%</span>` : ''}
+                </div>
+                <div class="h-14 flex items-center justify-center my-1 bg-sky-50/60 rounded-xl">
+                  <img src="${p.forward_sprite}" class="w-12 h-12 pixel-sprite object-contain" alt="${p.name_zh}" />
+                </div>
+                <div class="font-black text-xs text-center text-slate-800">${p.name_zh}</div>
+                <div class="flex justify-center gap-0.5 my-1">${renderTypeBadgeHTML(p.type1)}${renderTypeBadgeHTML(p.type2)}</div>
+              </div>
+              <div class="mt-1.5 pt-1 border-t border-slate-200 flex items-center justify-between">
+                <span class="text-[10px] font-black ${unlocked ? 'text-emerald-600' : 'text-amber-600'}">${unlocked ? '已收服' : `${item.cost}代幣`}</span>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-black ${selected ? 'bg-blue-600 text-white' : 'bg-red-600 text-white'}">${unlocked ? (selected ? '出戰' : '選用') : '解鎖'}</span>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        // 渲染難度與地圖
+        document.getElementById("difficultyGrid").innerHTML = DIFFICULTIES.map(d => `
+          <div onclick="GameApp.selectDifficulty('${d.id}')" class="poke-card cursor-pointer p-3 flex flex-col justify-between ${this.selectedDifficulty.id === d.id ? 'selected' : ''}">
+            <div class="flex justify-between items-center mb-1"><span class="font-black text-xs text-slate-800">${d.name}</span><span class="px-2 py-0.5 bg-amber-100 text-amber-800 font-black text-[10px] rounded-full">${d.badge}</span></div>
+            <p class="text-[11px] font-bold text-slate-600 leading-tight">${d.desc}</p>
+          </div>
+        `).join("");
+
+        document.getElementById("stageGrid").innerHTML = STAGES.map(st => `
+          <div onclick="GameApp.selectStage('${st.id}')" class="poke-card cursor-pointer p-3 flex flex-col justify-between ${this.selectedStage.id === st.id ? 'selected' : ''}">
+            <div class="flex justify-between items-center mb-1"><span class="font-black text-xs text-slate-800">${st.name}</span><span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-black text-[10px] rounded-full">${st.rewardMult}x</span></div>
+            <p class="text-[11px] font-bold text-slate-600 leading-tight">${st.desc}</p>
+          </div>
+        `).join("");
+      },
+
+      selectDifficulty(id) {
+        const found = DIFFICULTIES.find(d => d.id === id);
+        if (found) { this.selectedDifficulty = found; SoundFX.play("hit"); this.renderWizardContent(); }
+      },
+
+      selectStage(id) {
+        const found = STAGES.find(s => s.id === id);
+        if (found) { this.selectedStage = found; SoundFX.play("hit"); this.renderWizardContent(); }
+      },
+
+      handleTrainerCardClick(trainerId) {
+        const t = TRAINERS.find(x => x.id === trainerId);
+        if (!t) return;
+        if (this.saveData.unlockedTrainers[t.id]) {
+          this.selectedTrainer = t;
+          SoundFX.play("hit");
+          this.renderWizardContent();
+          this.updateTitleUI();
+          return;
         }
-      },
-
-      /**
-       * ============================================================================
-       * 17. 輔助更新器與 HUD 三態刷新
-       * ============================================================================
-       */
-      updateWeatherAndAmbiance(dt) {
-        if (this.weather === "rain" || this.weather === "thunder") {
-          this.rainOffset = (this.rainOffset + dt * 500) % 500;
+        if (t.isHiddenRed) {
+          alert("【赤紅 Red】解鎖條件：在任意難度下擊敗 7.5 分鐘最終 Boss【超夢 #150】！");
+          return;
         }
+        this.openUnlockConfirmModal("trainer", t.id, t.cost);
       },
 
-      updateTelegraphs(dt) {
-        for (let i = this.telegraphs.length - 1; i >= 0; i--) {
-          this.telegraphs[i].timer -= dt;
-          if (this.telegraphs[i].timer <= 0) this.telegraphs.splice(i, 1);
+      handlePokemonCardClick(pokeId, cost) {
+        if (this.saveData.unlockedPokemon[pokeId]) {
+          this.selectedStarterId = pokeId;
+          SoundFX.play("hit");
+          this.renderWizardContent();
+          this.updateTitleUI();
+          return;
         }
+        this.openUnlockConfirmModal("pokemon", pokeId, cost);
       },
 
-      updateProjectiles(dt) {
-        for (let i = this.projectiles.length - 1; i >= 0; i--) {
-          const pr = this.projectiles[i];
-          pr.x += pr.vx * dt;
-          pr.y += pr.vy * dt;
-          pr.life -= dt;
+      openUnlockConfirmModal(type, id, cost) {
+        this.pendingUnlockType = type;
+        this.pendingUnlockId = id;
+        this.pendingUnlockCost = cost;
+        document.getElementById("unlockConfirmError").classList.add("hidden");
+        document.getElementById("unlockConfirmCost").textContent = cost.toLocaleString();
 
-          // 命中判定
-          for (const e of this.enemies) {
-            if (!pr.hitSet.has(e) && Math.hypot(e.x - pr.x, e.y - pr.y) <= pr.radius + e.radius) {
-              pr.hitSet.add(e);
-              this.dealDamageToEnemy(e, pr.dmg, pr.type);
-              pr.pierce -= 1;
-              if (pr.pierce <= 0) break;
-            }
-          }
-          if (pr.life <= 0 || pr.pierce <= 0) this.projectiles.splice(i, 1);
-        }
-      },
-
-      updateMeleeEffects(dt) {
-        for (let i = this.meleeEffects.length - 1; i >= 0; i--) {
-          this.meleeEffects[i].timer -= dt;
-          if (this.meleeEffects[i].timer <= 0) this.meleeEffects.splice(i, 1);
-        }
-      },
-
-      updateUltimateVfx(dt) {
-        for (let i = this.ultimateVfxList.length - 1; i >= 0; i--) {
-          this.ultimateVfxList[i].timer -= dt;
-          if (this.ultimateVfxList[i].timer <= 0) this.ultimateVfxList.splice(i, 1);
-        }
-      },
-
-      updateEnemies(dt) {
-        const p = this.player;
-        for (let i = this.enemies.length - 1; i >= 0; i--) {
-          const e = this.enemies[i];
-          if (e.hitFlashTimer > 0) e.hitFlashTimer -= dt;
-
-          const dx = p.x - e.x; const dy = p.y - e.y;
-          const dist = Math.hypot(dx, dy) || 1;
-          e.x += (dx / dist) * e.speed * dt;
-          e.y += (dy / dist) * e.speed * dt;
-
-          if (dist < e.radius + 16 && p.invulnTimer <= 0) {
-            const dmg = Math.max(1, Math.round(e.atk * (p.shieldTimer > 0 ? 0.5 : 1.0)));
-            p.hp -= dmg;
-            p.invulnTimer = 0.5;
-            p.hitFlashTimer = 0.08;
-            this.spawnFloatingText(p.x, p.y - 18, `-${dmg}`, "#EF4444", 14);
-            if (p.hp <= 0) { this.triggerGameOver(false); return; }
-          }
-        }
-      },
-
-      updateLootAndGems(dt) {
-        const p = this.player;
-        for (let i = this.gems.length - 1; i >= 0; i--) {
-          const g = this.gems[i];
-          const d = Math.hypot(p.x - g.x, p.y - g.y);
-          if (d < p.magnetRadius) {
-            g.x += (p.x - g.x) * dt * 8;
-            g.y += (p.y - g.y) * dt * 8;
-          }
-          if (d < 20) {
-            this.gems.splice(i, 1);
-            this.gainExp(g.val);
-          }
-        }
-      },
-
-      updateParticlesAndTexts(dt) {
-        for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
-          const ft = this.floatingTexts[i];
-          ft.y -= 25 * dt;
-          ft.life = (ft.life || 0.75) - dt;
-          if (ft.life <= 0) this.floatingTexts.splice(i, 1);
-        }
-      },
-
-      spawnFloatingText(x, y, text, color = "#FFFFFF", size = 12) {
-        this.floatingTexts.push({ x, y, text, color, size, life: 0.75 });
-      },
-
-      refreshHUD() {
-        const p = this.player;
-        if (!p) return;
-
-        document.getElementById("hudPartnerName").textContent = p.data.name_zh;
-        document.getElementById("hudLevelText").textContent = `Lv.${p.level}`;
-        document.getElementById("hudHpBar").style.width = `${Math.max(0, (p.hp / p.maxHp) * 100)}%`;
-        document.getElementById("hudHpText").textContent = `${Math.ceil(p.hp)}/${p.maxHp}`;
-        document.getElementById("hudExpBar").style.width = `${Math.min(100, (p.exp / p.nextExp) * 100)}%`;
-
-        const mins = String(Math.floor(this.runTime / 60)).padStart(2, "0");
-        const secs = String(Math.floor(this.runTime % 60)).padStart(2, "0");
-        document.getElementById("hudTimer").textContent = `${mins}:${secs}`;
-        document.getElementById("hudKills").textContent = this.kills;
-        document.getElementById("hudCoins").textContent = this.runCoins;
-
-        // 三態大招按鈕顯示
-        const cdOverlay = document.getElementById("trainerSkillCdOverlay");
-        const activeOverlay = document.getElementById("trainerSkillActiveOverlay");
-        const btn = document.getElementById("btnTrainerActiveSkill");
-
-        if (p.trainerSkillActiveTimer > 0) {
-          activeOverlay.classList.remove("hidden");
-          cdOverlay.classList.add("hidden");
-          btn.className = "tactical-btn-active relative w-18 h-18 sm:w-20 sm:h-20 rounded-full border-3 border-emerald-400 flex flex-col items-center justify-center overflow-hidden";
-          document.getElementById("trainerSkillActiveText").textContent = `ACTIVE ${Math.ceil(p.trainerSkillActiveTimer)}s`;
-        } else if (p.trainerSkillCd > 0) {
-          cdOverlay.classList.remove("hidden");
-          activeOverlay.classList.add("hidden");
-          btn.className = "relative w-18 h-18 sm:w-20 sm:h-20 rounded-full bg-slate-800 border-3 border-slate-700 flex flex-col items-center justify-center overflow-hidden opacity-90";
-          document.getElementById("trainerSkillCdText").textContent = `${Math.ceil(p.trainerSkillCd)}s`;
+        if (type === "pokemon") {
+          const p = POKEMON_MAP.get(id);
+          document.getElementById("unlockModalHeaderTitle").textContent = "寶可夢解鎖";
+          document.getElementById("unlockConfirmFrontImg").src = p.forward_sprite;
+          document.getElementById("unlockConfirmBackImg").src = p.back_sprite;
+          document.getElementById("unlockConfirmName").textContent = `${p.name_zh} (#${String(p.id).padStart(3,'0')})`;
+          document.getElementById("unlockConfirmTypes").innerHTML = `${renderTypeBadgeHTML(p.type1)}${renderTypeBadgeHTML(p.type2)}`;
+          document.getElementById("unlockConfirmStats").innerHTML = `HP: ${p.hp} | ATK: ${p.atk} | SPD: ${p.speed}`;
         } else {
-          cdOverlay.classList.add("hidden");
-          activeOverlay.classList.add("hidden");
-          btn.className = "tactical-btn-ready relative w-18 h-18 sm:w-20 sm:h-20 rounded-full bg-gradient-to-b from-amber-300 via-amber-400 to-orange-500 border-3 border-slate-900 flex flex-col items-center justify-center overflow-hidden";
+          const t = TRAINERS.find(x => x.id === id);
+          document.getElementById("unlockModalHeaderTitle").textContent = "訓練家解鎖";
+          document.getElementById("unlockConfirmFrontImg").src = t.sprite;
+          document.getElementById("unlockConfirmName").textContent = t.name;
+          document.getElementById("unlockConfirmTypes").innerHTML = "";
+          document.getElementById("unlockConfirmStats").innerHTML = t.desc;
+        }
+        document.getElementById("unlock-confirm-modal").classList.remove("hidden");
+      },
+
+      closeUnlockConfirmModal() {
+        document.getElementById("unlock-confirm-modal").classList.add("hidden");
+      },
+
+      confirmUnlockAction() {
+        if (this.saveData.coins < this.pendingUnlockCost) {
+          document.getElementById("unlockConfirmError").classList.remove("hidden");
+          return;
+        }
+        this.saveData.coins -= this.pendingUnlockCost;
+        if (this.pendingUnlockType === "pokemon") {
+          this.saveData.unlockedPokemon[this.pendingUnlockId] = true;
+          this.saveData.pokedexCaught[this.pendingUnlockId] = true;
+          this.selectedStarterId = this.pendingUnlockId;
+        } else {
+          this.saveData.unlockedTrainers[this.pendingUnlockId] = true;
+          const found = TRAINERS.find(x => x.id === this.pendingUnlockId);
+          if (found) this.selectedTrainer = found;
+        }
+        SoundFX.play("levelup");
+        this.saveToStorage();
+        this.closeUnlockConfirmModal();
+        this.renderWizardContent();
+      },
+
+      // --- 圖鑑系統 (帶屬性頁籤) ---
+      openPokedexModal() {
+        document.getElementById("pokedexModal").classList.remove("hidden");
+        this.renderPokedexGrid();
+      },
+
+      closePokedexModal() {
+        document.getElementById("pokedexModal").classList.add("hidden");
+        this.updateTitleUI();
+      },
+
+      filterPokedex(tabKey) {
+        this.pokedexActiveTab = tabKey;
+        const tabs = ["ALL", "Grass", "Fire", "Water", "Electric", "Psychic", "CAUGHT"];
+        tabs.forEach(t => {
+          const el = document.getElementById(`tab_dex_${t}`);
+          if (el) {
+            if (t === tabKey) el.className = "pokedex-tab px-3 py-1 rounded-full bg-blue-600 text-white shrink-0";
+            else el.className = "pokedex-tab px-2.5 py-1 rounded-full bg-slate-200 text-slate-700 shrink-0";
+          }
+        });
+        this.renderPokedexGrid();
+      },
+
+      togglePokedexCardSide(id) {
+        this.pokedexShowBack[id] = !this.pokedexShowBack[id];
+        this.renderPokedexGrid();
+      },
+
+      claimPokedexReward(id) {
+        if (!this.saveData.pokedexCaught[id] || this.saveData.pokedexRewardClaimed[id]) return;
+        this.saveData.pokedexRewardClaimed[id] = true;
+        this.saveData.coins += 50;
+        SoundFX.play("levelup");
+        this.saveToStorage();
+        this.renderPokedexGrid();
+      },
+
+      claimAllPokedexRewards() {
+        let count = 0;
+        POKEMON_DB.forEach(pk => {
+          if (this.saveData.pokedexCaught[pk.id] && !this.saveData.pokedexRewardClaimed[pk.id]) {
+            this.saveData.pokedexRewardClaimed[pk.id] = true;
+            this.saveData.coins += 50;
+            count++;
+          }
+        });
+        if (count > 0) {
+          SoundFX.play("levelup");
+          this.saveToStorage();
+          this.renderPokedexGrid();
+          this.updateTitleUI();
+          alert(`一鍵領取 ${count} 隻賞金，獲得 +${count * 50} 代幣！`);
+        } else {
+          alert("目前沒有可領取的賞金！");
         }
       },
 
-      findNearestEnemyInViewport(ox, oy, range = 380) {
-        let best = null, bestD = range;
-        for (const e of this.enemies) {
-          const d = Math.hypot(e.x - ox, e.y - oy);
-          if (d < bestD) { bestD = d; best = e; }
+      renderPokedexGrid() {
+        const grid = document.getElementById("pokedexGrid");
+        let list = POKEMON_DB;
+        if (this.pokedexActiveTab === "CAUGHT") {
+          list = POKEMON_DB.filter(p => this.saveData.pokedexCaught[p.id]);
+        } else if (this.pokedexActiveTab !== "ALL") {
+          list = POKEMON_DB.filter(p => p.type1 === this.pokedexActiveTab || p.type2 === this.pokedexActiveTab);
         }
-        return best;
+
+        grid.innerHTML = list.map(p => {
+          const caught = !!this.saveData.pokedexCaught[p.id];
+          const claimed = !!this.saveData.pokedexRewardClaimed[p.id];
+          const showBack = !!this.pokedexShowBack[p.id];
+          const sprUrl = showBack ? p.back_sprite : p.forward_sprite;
+
+          return `
+            <div onclick="GameApp.togglePokedexCardSide(${p.id})" class="poke-card p-2 flex flex-col justify-between cursor-pointer ${caught ? 'border-blue-500' : 'opacity-75'}">
+              <div class="flex justify-between text-[9px] font-bold">
+                <span class="font-pixel text-slate-500">#${String(p.id).padStart(3,'0')}</span>
+                <span>${caught ? '<span class="text-emerald-600 font-black">已收服</span>' : '<span class="text-slate-400">? 未發現</span>'}</span>
+              </div>
+              <div class="h-14 flex items-center justify-center my-1 bg-sky-50/60 rounded-xl relative">
+                <img src="${sprUrl}" class="w-12 h-12 pixel-sprite object-contain ${!caught ? 'brightness-0 opacity-25' : ''}" alt="${p.name_zh}" />
+              </div>
+              <div class="text-center font-black text-xs text-slate-800 truncate">${caught ? p.name_zh : '？？？'}</div>
+              ${caught && !claimed
+                ? `<button onclick="event.stopPropagation(); GameApp.claimPokedexReward(${p.id})" class="poke-btn-yellow w-full py-1 text-[9px] font-black mt-1">領取 +50</button>`
+                : `<div class="text-[8px] text-center text-slate-400 mt-1">${claimed ? '賞金已領' : '點擊翻轉'}</div>`
+              }
+            </div>
+          `;
+        }).join("");
       },
 
+      // --- 強化中心與成就 ---
+      openSkillTreeModal() {
+        document.getElementById("skillTreeModal").classList.remove("hidden");
+        this.renderCenterUpgrades();
+      },
+
+      closeSkillTreeModal() {
+        document.getElementById("skillTreeModal").classList.add("hidden");
+        this.updateTitleUI();
+      },
+
+      switchCenterTab(tab) {
+        this.centerTab = tab;
+        const b1 = document.getElementById("centerTabBtn1");
+        const b2 = document.getElementById("centerTabBtn2");
+        if (tab === "pokemon") {
+          b1.className = "py-2.5 border-b-4 border-red-600 text-red-600 bg-white";
+          b2.className = "py-2.5 border-b-4 border-transparent text-slate-500";
+        } else {
+          b2.className = "py-2.5 border-b-4 border-red-600 text-red-600 bg-white";
+          b1.className = "py-2.5 border-b-4 border-transparent text-slate-500";
+        }
+        this.renderCenterUpgrades();
+      },
+
+      renderCenterUpgrades() {
+        const list = this.centerTab === "pokemon" ? CENTER_POKEMON_UPGRADES : CENTER_TRAINER_UPGRADES;
+        const box = document.getElementById("skillTreeContainer");
+        box.innerHTML = list.map(u => {
+          const lv = this.saveData.upgrades[u.id] || 0;
+          const isMax = lv >= u.maxLv;
+          const cost = Math.round(u.baseCost * Math.pow(1.45, lv));
+          return `
+            <div class="poke-card p-3 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <img src="${u.sprite}" class="w-9 h-9 pixel-sprite object-contain shrink-0" alt="icon" />
+                <div class="min-w-0">
+                  <div class="font-black text-xs sm:text-sm text-slate-800">${u.name} <span class="text-blue-600 text-[10px]">Lv.${lv}/${u.maxLv}</span></div>
+                  <p class="text-[10px] text-slate-500 truncate mt-0.5">${u.desc}</p>
+                </div>
+              </div>
+              <button onclick="GameApp.buyUpgrade('${u.id}', ${u.baseCost}, ${u.maxLv})" ${isMax ? 'disabled' : ''} class="${isMax ? 'poke-btn-white opacity-60' : 'poke-btn-red'} px-3 py-1.5 text-xs font-black shrink-0">
+                ${isMax ? '已滿級' : `${cost} 代幣`}
+              </button>
+            </div>
+          `;
+        }).join("");
+      },
+
+      buyUpgrade(id, baseCost, maxLv) {
+        const lv = this.saveData.upgrades[id] || 0;
+        if (lv >= maxLv) return;
+        const cost = Math.round(baseCost * Math.pow(1.45, lv));
+        if (this.saveData.coins < cost) { alert("代幣不足！"); return; }
+        this.saveData.coins -= cost;
+        this.saveData.upgrades[id] = lv + 1;
+        SoundFX.play("levelup");
+        this.saveToStorage();
+        this.renderCenterUpgrades();
+      },
+
+      openAchievementModal() {
+        document.getElementById("achievementModal").classList.remove("hidden");
+        const box = document.getElementById("achievementListContainer");
+        box.innerHTML = ACHIEVEMENTS.map(a => {
+          const unlocked = a.check(this.saveData.stats, this.saveData);
+          const claimed = !!this.saveData.claimedAch[a.id];
+          return `
+            <div class="poke-card p-3 flex items-center justify-between gap-3">
+              <div>
+                <div class="font-black text-xs sm:text-sm text-slate-800">${a.name}</div>
+                <div class="text-[10px] text-slate-500">${a.desc}</div>
+                <div class="text-[10px] font-black text-amber-600 mt-0.5">+${a.reward} 代幣</div>
+              </div>
+              ${unlocked && !claimed
+                ? `<button onclick="GameApp.claimAchievement('${a.id}', ${a.reward})" class="poke-btn-red px-3 py-1 text-xs font-black shrink-0">領賞</button>`
+                : `<span class="text-xs font-black ${claimed ? 'text-emerald-600' : 'text-slate-400'} shrink-0">${claimed ? '已領取' : '未達成'}</span>`
+              }
+            </div>
+          `;
+        }).join("");
+      },
+
+      closeAchievementModal() {
+        document.getElementById("achievementModal").classList.add("hidden");
+        this.updateTitleUI();
+      },
+
+      claimAchievement(id, reward) {
+        if (this.saveData.claimedAch[id]) return;
+        this.saveData.claimedAch[id] = true;
+        this.saveData.coins += reward;
+        SoundFX.play("levelup");
+        this.saveToStorage();
+        this.openAchievementModal();
+      },
+
+      confirmEeveeEvolution(targetId) {
+        document.getElementById("eevee-evo-modal").classList.add("hidden");
+        this.evolvePlayerPokemon(targetId);
+        this.state = "PLAYING";
+        this.refreshHUD();
+      },
+
+      toggleDebugMenu() {
+        document.getElementById("debugDropdown").classList.toggle("hidden");
+      },
+
+      debugForceLevelUp() {
+        if (!this.player) return;
+        this.player.level += 5;
+        this.openLevelUpModal();
+      },
+
+      debugUnlockSuperMove() {
+        if (!this.player) return;
+        const sk = Object.values(this.player.skills)[0];
+        if (sk) { sk.level = 10; sk.evolved = true; }
+        this.refreshHUD();
+      },
+
+      debugSpawnTreasureMob(kind) {
+        if (this.player) this.spawnTreasureMonster(kind);
+      },
+
+      debugSkipToTime(sec) {
+        this.runTime = sec;
+      },
+
+      debugTriggerSecretMew() {
+        if (this.player) this.spawnBoss(151, false);
+      },
+
+      showCutsceneBanner(title, subtitle, duration = 2600) {
+        const b = document.getElementById("cutsceneBanner");
+        document.getElementById("cutsceneTitle").textContent = title;
+        document.getElementById("cutsceneSubtitle").textContent = subtitle;
+        b.classList.remove("hidden");
+        clearTimeout(this._bannerTimeout);
+        this._bannerTimeout = setTimeout(() => b.classList.add("hidden"), duration);
+      },
+
+      summonOrUpgradePartner() {
+        if (this.partners.length < 2) {
+          const pool = PARTNER_SUMMON_POOL.filter(id => id !== this.player.id && !this.partners.some(pt => pt.id === id));
+          const pickId = pool[Math.floor(Math.random() * pool.length)] || 25;
+          const pData = POKEMON_MAP.get(pickId);
+          this.partners.push({
+            id: pData.id, data: pData, level: 1,
+            x: this.player.x, y: this.player.y,
+            facingX: -1, facingY: 1, cdTimer: 0.6
+          });
+          this.saveData.pokedexCaught[pData.id] = true;
+        }
+      },
+
+      spawnTreasureMonster(kind) {
+        const pokeId = kind === "meowth" ? 52 : 113;
+        const pData = POKEMON_MAP.get(pokeId);
+        const ang = Math.random() * Math.PI * 2;
+        const ex = this.player.x + Math.cos(ang) * 320;
+        const ey = this.player.y + Math.sin(ang) * 320;
+
+        this.enemies.push({
+          id: pokeId, data: pData,
+          x: ex, y: ey,
+          hp: kind === "meowth" ? 220 : 580,
+          maxHp: kind === "meowth" ? 220 : 580,
+          atk: 0, speed: kind === "meowth" ? 120 : 50,
+          radius: 22, isElite: false, isBoss: false,
+          treasureType: kind, escapeTimer: 20.0,
+          facingX: -1, facingY: 1, hitFlashTimer: 0
+        });
+      },
+
+      spawnMapLoot(id, x, y) {
+        const meta = MAP_BOSS_LOOTS[id];
+        if (meta) this.mapItems.push({ id, x, y, meta });
+      },
+
+      createLightningArc(x1, y1, x2, y2, color) {
+        const pts = [{ x: x1, y: y1 }];
+        for (let i = 1; i < 5; i++) {
+          const t = i / 5;
+          pts.push({
+            x: x1 + (x2 - x1) * t + (Math.random() - 0.5) * 30,
+            y: y1 + (y2 - y1) * t + (Math.random() - 0.5) * 30
+          });
+        }
+        pts.push({ x: x2, y: y2 });
+        this.lightningArcs.push({ pts, color, timer: 0.22 });
+      },
+
+      toggleTimeScale() {
+        this.timeScale = this.timeScale === 1 ? 2 : 1;
+        document.getElementById("speedToggleText").textContent = `${this.timeScale}x`;
+      },
+
+      // --- 主循環調度 ---
       loop(timestamp) {
-        const dt = Math.min(0.05, (timestamp - this.lastFrameTime) / 1000 || 0.016);
+        const rawDt = Math.min(0.05, (timestamp - this.lastFrameTime) / 1000 || 0.016);
         this.lastFrameTime = timestamp;
 
-        if (this.state === "PLAYING") {
-          this.updateCombat(dt * this.timeScale);
+        if (this.state === "SPLASH" || this.state === "TITLE" || this.state === "LOADING") {
+          this.updateTitleDemo(rawDt);
+          this.renderTitleDemo();
+        } else if (this.state === "PLAYING") {
+          this.updateCombat(rawDt * this.timeScale);
+          this.renderCombat();
+        } else {
           this.renderCombat();
         }
         requestAnimationFrame((t) => this.loop(t));
@@ -3062,12 +2535,23 @@
 
       togglePause() {
         this.state = this.state === "PLAYING" ? "PAUSED" : "PLAYING";
+        document.getElementById("endModalTitle").textContent = "GAME PAUSED";
+        document.getElementById("endModalSubtitle").textContent = "冒險暫停中！";
+        document.getElementById("btnResumeGame").classList.remove("hidden");
         document.getElementById("endModal").classList.toggle("hidden", this.state === "PLAYING");
       },
 
       triggerGameOver(victory) {
         this.state = "GAMEOVER";
+        SoundFX.startBgm("lobby");
+        this.saveToStorage();
         document.getElementById("endModalTitle").textContent = victory ? "關都冠軍通關！" : "冒險結束";
+        document.getElementById("endModalSubtitle").textContent = victory ? "恭喜擊敗所有傳說寶可夢！" : "再接再厲！";
+        document.getElementById("btnResumeGame").classList.add("hidden");
+        document.getElementById("endStatTime").textContent = document.getElementById("hudTimer").textContent;
+        document.getElementById("endStatPartner").textContent = `${this.selectedTrainer.name} & ${this.player.data.name_zh} (Lv.${this.player.level})`;
+        document.getElementById("endStatKills").textContent = this.kills;
+        document.getElementById("endStatCoins").textContent = `+${this.runCoins}`;
         document.getElementById("endModal").classList.remove("hidden");
       },
 
@@ -3076,6 +2560,7 @@
         document.getElementById("endModal").classList.add("hidden");
         document.getElementById("hudLayer").classList.add("hidden");
         document.getElementById("titleScreen").classList.remove("hidden");
+        this.updateTitleUI();
       }
     };
 
